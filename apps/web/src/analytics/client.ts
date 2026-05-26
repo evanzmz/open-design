@@ -11,6 +11,7 @@ import {
   type AnalyticsConfigureGlobals,
 } from '@open-design/contracts/analytics';
 import { scrubBeforeSend } from './scrub';
+import { apiUrl } from '../utils/web-path';
 import {
   clearExceptionTrackingContext,
   setExceptionTrackingContext,
@@ -105,7 +106,7 @@ export function bootstrapExceptionTracking(context: AnalyticsContext): Promise<v
   if (exceptionBootstrapPromise) return exceptionBootstrapPromise;
   exceptionBootstrapPromise = (async () => {
     try {
-      const res = await fetch('/api/analytics/config');
+      const res = await fetch(apiUrl('/api/analytics/config'));
       if (!res.ok) {
         clearExceptionTrackingContext();
         return;
@@ -147,7 +148,7 @@ export async function getAnalyticsClient(
   // trigger a fresh init.
   const pending = (async () => {
     try {
-      const res = await fetch('/api/analytics/config');
+      const res = await fetch(apiUrl('/api/analytics/config'));
       if (!res.ok) return null;
       const cfg = (await res.json()) as AnalyticsConfigResponse;
       if (!cfg.enabled || !cfg.key || !cfg.host) return null;

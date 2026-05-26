@@ -18,6 +18,7 @@ import type { AppConfig } from '../../src/types';
 
 const store = new Map<string, string>();
 const originalFetch = globalThis.fetch;
+const api = (path: string) => `/open-design${path}`;
 
 vi.stubGlobal('localStorage', {
   getItem: vi.fn((key: string) => store.get(key) ?? null),
@@ -44,7 +45,7 @@ describe('syncComposioConfigToDaemon', () => {
 
     await syncComposioConfigToDaemon({ apiKey: 'cmp_secret', apiKeyConfigured: false });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/connectors/composio/config', {
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/connectors/composio/config'), {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ apiKey: 'cmp_secret' }),
@@ -57,7 +58,7 @@ describe('syncComposioConfigToDaemon', () => {
 
     await syncComposioConfigToDaemon({ apiKey: '', apiKeyConfigured: true, apiKeyTail: 'test' });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/connectors/composio/config', {
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/connectors/composio/config'), {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({}),
@@ -88,7 +89,7 @@ describe('syncConfigToDaemon', () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe('/api/app-config');
+    expect(url).toBe(api('/api/app-config'));
     expect(init.method).toBe('PUT');
     expect(init.headers).toEqual({ 'content-type': 'application/json' });
     expect(JSON.parse(String(init.body))).toMatchObject({

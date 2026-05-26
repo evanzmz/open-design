@@ -17,6 +17,7 @@ import type {
   ProjectPluginFolderInstallRequest,
 } from '@open-design/contracts';
 import { randomUUID } from '../utils/uuid';
+import { apiUrl } from '../utils/web-path';
 import type {
   ChatMessage,
   Conversation,
@@ -31,7 +32,7 @@ export type { PluginShareAction } from '@open-design/contracts';
 
 export async function listProjects(): Promise<Project[]> {
   try {
-    const resp = await fetch('/api/projects');
+    const resp = await fetch(apiUrl('/api/projects'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { projects: Project[] };
     return json.projects ?? [];
@@ -42,7 +43,7 @@ export async function listProjects(): Promise<Project[]> {
 
 export async function getProject(id: string): Promise<Project | null> {
   try {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(id)}`);
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(id)}`));
     if (!resp.ok) return null;
     const json = (await resp.json()) as { project: Project };
     return json.project;
@@ -72,7 +73,7 @@ export async function createProject(input: {
     // calling it directly throws — the surrounding try/catch then turns
     // the Create button into a silent no-op (issue #849).
     const id = randomUUID();
-    const resp = await fetch('/api/projects', {
+    const resp = await fetch(apiUrl('/api/projects'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, ...input }),
@@ -91,7 +92,7 @@ export async function createProject(input: {
 export async function importFolderProject(
   input: ImportFolderRequest,
 ): Promise<ImportFolderResponse> {
-  const resp = await fetch('/api/import/folder', {
+  const resp = await fetch(apiUrl('/api/import/folder'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -113,7 +114,7 @@ export async function importClaudeDesignZip(
   try {
     const form = new FormData();
     form.append('file', file);
-    const resp = await fetch('/api/import/claude-design', {
+    const resp = await fetch(apiUrl('/api/import/claude-design'), {
       method: 'POST',
       body: form,
     });
@@ -132,7 +133,7 @@ export async function importClaudeDesignZip(
 
 export async function listTemplates(): Promise<ProjectTemplate[]> {
   try {
-    const resp = await fetch('/api/templates');
+    const resp = await fetch(apiUrl('/api/templates'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { templates: ProjectTemplate[] };
     return json.templates ?? [];
@@ -143,7 +144,7 @@ export async function listTemplates(): Promise<ProjectTemplate[]> {
 
 export async function getTemplate(id: string): Promise<ProjectTemplate | null> {
   try {
-    const resp = await fetch(`/api/templates/${encodeURIComponent(id)}`);
+    const resp = await fetch(apiUrl(`/api/templates/${encodeURIComponent(id)}`));
     if (!resp.ok) return null;
     const json = (await resp.json()) as { template: ProjectTemplate };
     return json.template;
@@ -158,7 +159,7 @@ export async function saveTemplate(input: {
   sourceProjectId: string;
 }): Promise<ProjectTemplate | null> {
   try {
-    const resp = await fetch('/api/templates', {
+    const resp = await fetch(apiUrl('/api/templates'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -173,7 +174,7 @@ export async function saveTemplate(input: {
 
 export async function deleteTemplate(id: string): Promise<boolean> {
   try {
-    const resp = await fetch(`/api/templates/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/templates/${encodeURIComponent(id)}`), {
       method: 'DELETE',
     });
     return resp.ok;
@@ -192,7 +193,7 @@ export async function patchProject(
   patch: ProjectPatch,
 ): Promise<Project | null> {
   try {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(id)}`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch),
@@ -207,7 +208,7 @@ export async function patchProject(
 
 export async function deleteProject(id: string): Promise<boolean> {
   try {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(id)}`), {
       method: 'DELETE',
     });
     return resp.ok;
@@ -223,7 +224,7 @@ export async function listConversations(
 ): Promise<Conversation[]> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations`),
     );
     if (!resp.ok) return [];
     const json = (await resp.json()) as { conversations: Conversation[] };
@@ -239,7 +240,7 @@ export async function createConversation(
 ): Promise<Conversation | null> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations`),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -261,7 +262,7 @@ export async function patchConversation(
 ): Promise<Conversation | null> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}`),
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -282,7 +283,7 @@ export async function deleteConversation(
 ): Promise<boolean> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}`),
       { method: 'DELETE' },
     );
     return resp.ok;
@@ -299,7 +300,7 @@ export async function listMessages(
 ): Promise<ChatMessage[]> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/messages`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/messages`),
     );
     if (!resp.ok) return [];
     const json = (await resp.json()) as { messages: ChatMessage[] };
@@ -329,7 +330,7 @@ export async function saveMessage(
       ? { ...message, telemetryFinalized: true }
       : message;
     await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(message.id)}`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(message.id)}`),
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -347,7 +348,7 @@ export async function saveMessage(
 export async function loadTabs(projectId: string): Promise<OpenTabsState> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/tabs`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/tabs`),
     );
     if (!resp.ok) return { tabs: [], active: null };
     return (await resp.json()) as OpenTabsState;
@@ -361,7 +362,7 @@ export async function saveTabs(
   state: OpenTabsState,
 ): Promise<void> {
   try {
-    await fetch(`/api/projects/${encodeURIComponent(projectId)}/tabs`, {
+    await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/tabs`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state),
@@ -392,7 +393,7 @@ export async function listPlugins(
   options: ListPluginsOptions = {},
 ): Promise<InstalledPluginRecord[]> {
   try {
-    const resp = await fetch('/api/plugins');
+    const resp = await fetch(apiUrl('/api/plugins'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { plugins?: InstalledPluginRecord[] };
     const plugins = json.plugins ?? [];
@@ -418,7 +419,7 @@ interface PluginInstallEvent {
 export async function installPluginSource(source: string): Promise<PluginInstallOutcome> {
   const log: string[] = [];
   try {
-    const resp = await fetch('/api/plugins/install', {
+    const resp = await fetch(apiUrl('/api/plugins/install'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ source }),
@@ -465,7 +466,7 @@ export async function installPluginSource(source: string): Promise<PluginInstall
 export async function uploadPluginZip(file: File): Promise<PluginInstallOutcome> {
   const form = new FormData();
   form.append('file', file);
-  return postPluginUpload('/api/plugins/upload-zip', form);
+  return postPluginUpload(apiUrl('/api/plugins/upload-zip'), form);
 }
 
 export async function uploadPluginFolder(files: File[]): Promise<PluginInstallOutcome> {
@@ -475,7 +476,7 @@ export async function uploadPluginFolder(files: File[]): Promise<PluginInstallOu
     form.append('files', file, file.name);
     form.append('paths', relativePath);
   }
-  return postPluginUpload('/api/plugins/upload-folder', form);
+  return postPluginUpload(apiUrl('/api/plugins/upload-folder'), form);
 }
 
 export async function installGeneratedPluginFolder(
@@ -485,7 +486,7 @@ export async function installGeneratedPluginFolder(
   try {
     const request: ProjectPluginFolderInstallRequest = { path: relativePath };
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/plugins/install-folder`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/plugins/install-folder`),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -568,7 +569,7 @@ export async function startGeneratedPluginShareTask(
   action: 'publish-github' | 'contribute-open-design',
 ): Promise<PluginShareTaskStart> {
   const resp = await fetch(
-    `/api/projects/${encodeURIComponent(projectId)}/plugins/share-tasks`,
+    apiUrl(`/api/projects/${encodeURIComponent(projectId)}/plugins/share-tasks`),
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -600,7 +601,7 @@ export async function waitGeneratedPluginShareTask(
   since: number,
   timeoutMs = 25_000,
 ): Promise<PluginShareTaskSnapshot> {
-  const resp = await fetch(`/api/plugins/share-tasks/${encodeURIComponent(taskId)}/wait`, {
+  const resp = await fetch(apiUrl(`/api/plugins/share-tasks/${encodeURIComponent(taskId)}/wait`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ since, timeoutMs }),
@@ -634,7 +635,7 @@ export async function createPluginShareProject(
 ): Promise<PluginShareProjectOutcome> {
   try {
     const resp = await fetch(
-      `/api/plugins/${encodeURIComponent(pluginId)}/share-project`,
+      apiUrl(`/api/plugins/${encodeURIComponent(pluginId)}/share-project`),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -679,7 +680,7 @@ async function postGeneratedPluginShareAction(
 ): Promise<PluginShareOutcome> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/plugins/${action}`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/plugins/${action}`),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -706,7 +707,7 @@ async function postGeneratedPluginShareAction(
 export async function upgradePlugin(id: string): Promise<PluginInstallOutcome> {
   const log: string[] = [];
   try {
-    const resp = await fetch(`/api/plugins/${encodeURIComponent(id)}/upgrade`, {
+    const resp = await fetch(apiUrl(`/api/plugins/${encodeURIComponent(id)}/upgrade`), {
       method: 'POST',
     });
     if (!resp.ok) {
@@ -818,7 +819,7 @@ function getUploadRelativePath(file: File): string {
 
 export async function uninstallPlugin(id: string): Promise<boolean> {
   try {
-    const resp = await fetch(`/api/plugins/${encodeURIComponent(id)}/uninstall`, {
+    const resp = await fetch(apiUrl(`/api/plugins/${encodeURIComponent(id)}/uninstall`), {
       method: 'POST',
     });
     return resp.ok;
@@ -902,7 +903,7 @@ export interface PluginMarketplaceMutationOutcome {
 
 export async function listPluginMarketplaces(): Promise<PluginMarketplace[]> {
   try {
-    const resp = await fetch('/api/marketplaces');
+    const resp = await fetch(apiUrl('/api/marketplaces'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { marketplaces?: PluginMarketplace[] };
     return json.marketplaces ?? [];
@@ -916,7 +917,7 @@ export async function addPluginMarketplace(input: {
   trust: PluginMarketplaceTrust;
 }): Promise<PluginMarketplaceMutationOutcome> {
   try {
-    const resp = await fetch('/api/marketplaces', {
+    const resp = await fetch(apiUrl('/api/marketplaces'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -931,7 +932,7 @@ export async function refreshPluginMarketplace(
   id: string,
 ): Promise<PluginMarketplaceMutationOutcome> {
   try {
-    const resp = await fetch(`/api/marketplaces/${encodeURIComponent(id)}/refresh`, {
+    const resp = await fetch(apiUrl(`/api/marketplaces/${encodeURIComponent(id)}/refresh`), {
       method: 'POST',
     });
     return readPluginMarketplaceOutcome(resp, 'Marketplace source refreshed.');
@@ -944,7 +945,7 @@ export async function removePluginMarketplace(
   id: string,
 ): Promise<PluginMarketplaceMutationOutcome> {
   try {
-    const resp = await fetch(`/api/marketplaces/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/marketplaces/${encodeURIComponent(id)}`), {
       method: 'DELETE',
     });
     if (!resp.ok) {
@@ -961,7 +962,7 @@ export async function setPluginMarketplaceTrust(
   trust: PluginMarketplaceTrust,
 ): Promise<PluginMarketplaceMutationOutcome> {
   try {
-    const resp = await fetch(`/api/marketplaces/${encodeURIComponent(id)}/trust`, {
+    const resp = await fetch(apiUrl(`/api/marketplaces/${encodeURIComponent(id)}/trust`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ trust }),
@@ -998,7 +999,7 @@ export async function applyPlugin(
 ): Promise<ApplyResult | null> {
   try {
     const resp = await fetch(
-      `/api/plugins/${encodeURIComponent(pluginId)}/apply`,
+      apiUrl(`/api/plugins/${encodeURIComponent(pluginId)}/apply`),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1103,7 +1104,7 @@ export async function fetchAppliedPluginSnapshot(
 ): Promise<AppliedPluginSnapshot | null> {
   try {
     const resp = await fetch(
-      `/api/applied-plugins/${encodeURIComponent(snapshotId)}`,
+      apiUrl(`/api/applied-plugins/${encodeURIComponent(snapshotId)}`),
     );
     if (!resp.ok) return null;
     return (await resp.json()) as AppliedPluginSnapshot;

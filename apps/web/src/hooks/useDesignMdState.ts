@@ -13,6 +13,7 @@ import type {
   ProjectFilesResponse,
 } from '@open-design/contracts';
 import { parseProvenance } from '../lib/parse-provenance';
+import { apiUrl } from '../utils/web-path';
 
 const DESIGN_MD = 'DESIGN.md';
 
@@ -74,7 +75,7 @@ export function useDesignMdState(projectId: string, refreshKey: number = 0): Des
       const projectIdEnc = encodeURIComponent(projectId);
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
-        const filesResp = await fetch(`/api/projects/${projectIdEnc}/files`, { signal });
+        const filesResp = await fetch(apiUrl(`/api/projects/${projectIdEnc}/files`), { signal });
         if (!filesResp.ok) {
           throw new Error(`GET files → HTTP ${filesResp.status}`);
         }
@@ -92,7 +93,7 @@ export function useDesignMdState(projectId: string, refreshKey: number = 0): Des
         }
 
         const designResp = await fetch(
-          `/api/projects/${projectIdEnc}/files/${encodeURIComponent(DESIGN_MD)}`,
+          apiUrl(`/api/projects/${projectIdEnc}/files/${encodeURIComponent(DESIGN_MD)}`),
           { signal },
         );
         if (!designResp.ok) {
@@ -102,7 +103,7 @@ export function useDesignMdState(projectId: string, refreshKey: number = 0): Des
         if (signal?.aborted) return;
         const provenance = parseProvenance(designText);
 
-        const convsResp = await fetch(`/api/projects/${projectIdEnc}/conversations`, {
+        const convsResp = await fetch(apiUrl(`/api/projects/${projectIdEnc}/conversations`), {
           signal,
         });
         let convsBody: ConversationsResponseShape = { conversations: [] };

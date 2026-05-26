@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createProjectEventsConnection,
@@ -40,9 +40,21 @@ afterEach(() => {
 });
 
 describe('projectEventsUrl', () => {
+  beforeEach(() => {
+    vi.stubGlobal('window', {
+      __NEXT_DATA__: {
+        basePath: '/open-design',
+      },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('encodes project id segment', () => {
     expect(projectEventsUrl('818cf7a8-839/9'))
-      .toBe('/api/projects/818cf7a8-839%2F9/events');
+      .toBe('/open-design/api/projects/818cf7a8-839%2F9/events');
   });
 });
 
@@ -54,7 +66,7 @@ describe('createProjectEventsConnection', () => {
       { EventSourceCtor: MockEventSource as unknown as typeof EventSource },
     );
     expect(MockEventSource.instances).toHaveLength(1);
-    expect(MockEventSource.instances[0]!.url).toBe('/api/projects/p1/events');
+    expect(MockEventSource.instances[0]!.url).toBe('/open-design/api/projects/p1/events');
     conn.close();
   });
 

@@ -11,6 +11,8 @@ import { describe, expect, it } from 'vitest';
 import type { InstalledPluginRecord } from '@open-design/contracts';
 import { inferPluginPreview } from '../../src/components/plugins-home/preview';
 
+const api = (path: string) => `/open-design${path}`;
+
 interface MakeArgs {
   id: string;
   title?: string;
@@ -110,7 +112,7 @@ describe('inferPluginPreview', () => {
     );
     expect(out.kind).toBe('html');
     if (out.kind !== 'html') return;
-    expect(out.src).toBe('/api/plugins/ex/preview');
+    expect(out.src).toBe(api('/api/plugins/ex/preview'));
     expect(out.label).toBe('example.html');
   });
 
@@ -123,7 +125,7 @@ describe('inferPluginPreview', () => {
     );
     expect(out.kind).toBe('html');
     if (out.kind !== 'html') return;
-    expect(out.src).toBe('/api/plugins/wbr/example/index');
+    expect(out.src).toBe(api('/api/plugins/wbr/example/index'));
     expect(out.label).toBe('Weekly');
   });
 
@@ -161,6 +163,13 @@ describe('inferPluginPreview', () => {
 
   it('returns text fallback for plain scenario plugins without preview material', () => {
     const out = inferPluginPreview(make({ id: 'scn', mode: 'prototype' }));
+    expect(out.kind).toBe('text');
+  });
+
+  it('keeps live-artifact scenarios without shipped examples off iframe probing', () => {
+    const out = inferPluginPreview(
+      make({ id: 'example-live-artifact', mode: 'prototype', tags: ['live-artifact'] }),
+    );
     expect(out.kind).toBe('text');
   });
 });

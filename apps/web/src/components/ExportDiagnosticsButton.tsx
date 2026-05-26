@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
+import { apiUrl } from '../utils/web-path';
 import { Icon } from './Icon';
 
 // Mirrors what apps/desktop preload exposes via contextBridge. Kept inline
@@ -48,7 +49,7 @@ function fallbackFilename(): string {
 }
 
 async function exportViaHttp(): Promise<{ filename: string }> {
-  const res = await fetch(DIAGNOSTICS_EXPORT_PATH, { credentials: 'same-origin' });
+  const res = await fetch(apiUrl(DIAGNOSTICS_EXPORT_PATH), { credentials: 'same-origin' });
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`;
     try {

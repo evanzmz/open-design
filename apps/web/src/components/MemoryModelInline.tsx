@@ -34,6 +34,7 @@ import {
   useState,
 } from 'react';
 import { useT } from '../i18n';
+import { apiUrl } from '../utils/web-path';
 import type {
   MemoryExtractionConfig as MemoryExtractionConfigShape,
   MemoryExtractionMaskedConfig,
@@ -146,7 +147,7 @@ function cliAgentLabel(agentId: string | null | undefined): string | null {
 
 async function fetchMemoryExtraction(): Promise<MemoryExtractionMaskedConfig | null> {
   try {
-    const resp = await fetch('/api/memory');
+    const resp = await fetch(apiUrl('/api/memory'));
     if (!resp.ok) return null;
     const json = (await resp.json()) as MemoryListResponse;
     return json.extraction ?? null;
@@ -158,7 +159,7 @@ async function fetchMemoryExtraction(): Promise<MemoryExtractionMaskedConfig | n
 async function saveMemoryExtraction(
   extraction: MemoryExtractionConfigShape | null,
 ): Promise<MemoryExtractionMaskedConfig | null | undefined> {
-  const resp = await fetch('/api/memory/config', {
+  const resp = await fetch(apiUrl('/api/memory/config'), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ extraction }),

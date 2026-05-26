@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { EntryHelpMenu } from './EntryHelpMenu';
 import { Icon } from './Icon';
 import { useT } from '../i18n';
+import { assetUrl } from '../utils/web-path';
 
 export type EntryView =
   | 'home'
@@ -71,7 +72,7 @@ export function EntryNavRail({ view, onViewChange, onNewProject }: Props) {
           data-testid="entry-nav-logo"
         >
           <img
-            src="/app-icon.svg"
+            src={assetUrl('/app-icon.svg')}
             alt=""
             className="entry-nav-rail__logo-img"
             draggable={false}

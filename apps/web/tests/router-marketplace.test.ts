@@ -91,6 +91,6 @@ describe('router entry sub-views', () => {
 
   it('parses /onboarding as the global onboarding panel', () => {
     expect(parseRoute('/onboarding')).toEqual({ kind: 'home', view: 'onboarding' });
-    expect(buildPath({ kind: 'home', view: 'onboarding' })).toBe('/onboarding');
+    expect(buildPath({ kind: 'home', view: 'onboarding' })).toBe('/open-design/onboarding');
   });
 });

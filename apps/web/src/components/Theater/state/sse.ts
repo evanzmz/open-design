@@ -7,6 +7,7 @@ import {
 } from '@open-design/contracts/critique';
 
 import type { CritiqueAction } from './reducer';
+import { apiUrl } from '../../../utils/web-path';
 
 export interface CritiqueEventsConnection {
   close(): void;
@@ -28,7 +29,7 @@ const DEFAULT_INITIAL_BACKOFF = 1000;
 const DEFAULT_MAX_BACKOFF = 30_000;
 
 export function critiqueEventsUrl(projectId: string): string {
-  return `/api/projects/${encodeURIComponent(projectId)}/events`;
+  return apiUrl(`/api/projects/${encodeURIComponent(projectId)}/events`);
 }
 
 /**

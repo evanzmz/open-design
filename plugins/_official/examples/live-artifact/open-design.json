@@ -38,10 +38,6 @@
     "mode": "prototype",
     "scenario": "live",
     "surface": "web",
-    "preview": {
-      "type": "html",
-      "entry": "./index.html"
-    },
     "useCase": {
       "query": {
         "en": "Create refreshable, auditable Open Design artifacts backed by connector or local data. Trigger when the user asks for live dashboards, refreshable reports, synced views, or reusable data-backed artifacts.",

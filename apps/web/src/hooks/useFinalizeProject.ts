@@ -19,6 +19,7 @@ import type {
   FinalizeAnthropicResponse,
   FinalizeProviderProtocol,
 } from '@open-design/contracts';
+import { apiUrl } from '../utils/web-path';
 
 // 130 000 ms = daemon timeout (120 s) + 10 s buffer so the daemon's
 // own retry/timeout layer always wins under normal failure modes.
@@ -101,7 +102,7 @@ export function useFinalizeProject(projectId: string): FinalizeProjectState {
 
       try {
         const resp = await fetch(
-          `/api/projects/${encodeURIComponent(projectId)}/finalize/${protocol}`,
+          apiUrl(`/api/projects/${encodeURIComponent(projectId)}/finalize/${protocol}`),
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

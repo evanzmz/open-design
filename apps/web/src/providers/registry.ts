@@ -13,6 +13,7 @@ import type {
   ImportLocalDesignSystemResponse,
   ReplaceProjectWorkingDirResponse,
 } from '@open-design/contracts';
+import { apiUrl } from '../utils/web-path';
 import type {
   AgentInfo,
   AppVersionInfo,
@@ -87,7 +88,7 @@ function deployProviderQuery(providerId?: WebDeployProviderId): string {
 
 export async function fetchAgents(options?: { throwOnError?: boolean }): Promise<AgentInfo[]> {
   try {
-    const resp = await fetch('/api/agents');
+    const resp = await fetch(apiUrl('/api/agents'));
     if (!resp.ok) {
       if (options?.throwOnError) throw new Error(`agents ${resp.status}`);
       return [];
@@ -102,7 +103,7 @@ export async function fetchAgents(options?: { throwOnError?: boolean }): Promise
 
 export async function fetchSkills(): Promise<SkillSummary[]> {
   try {
-    const resp = await fetch('/api/skills');
+    const resp = await fetch(apiUrl('/api/skills'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { skills: SkillSummary[] };
     return json.skills ?? [];
@@ -118,7 +119,7 @@ export async function fetchSkills(): Promise<SkillSummary[]> {
 // specs/current/skills-and-design-templates.md.
 export async function fetchDesignTemplates(): Promise<SkillSummary[]> {
   try {
-    const resp = await fetch('/api/design-templates');
+    const resp = await fetch(apiUrl('/api/design-templates'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { designTemplates: SkillSummary[] };
     return json.designTemplates ?? [];
@@ -129,7 +130,7 @@ export async function fetchDesignTemplates(): Promise<SkillSummary[]> {
 
 export async function fetchDesignTemplate(id: string): Promise<SkillDetail | null> {
   try {
-    const resp = await fetch(`/api/design-templates/${encodeURIComponent(id)}`);
+    const resp = await fetch(apiUrl(`/api/design-templates/${encodeURIComponent(id)}`));
     if (!resp.ok) return null;
     return (await resp.json()) as SkillDetail;
   } catch {
@@ -144,7 +145,7 @@ export async function fetchDesignTemplate(id: string): Promise<SkillDetail | nul
 // empty state.
 export async function fetchCodexPets(): Promise<CodexPetsResponse> {
   try {
-    const resp = await fetch('/api/codex-pets');
+    const resp = await fetch(apiUrl('/api/codex-pets'));
     if (!resp.ok) return { pets: [], rootDir: '' };
     return (await resp.json()) as CodexPetsResponse;
   } catch {
@@ -160,7 +161,7 @@ export async function syncCommunityPets(
   input?: SyncCommunityPetsRequest,
 ): Promise<SyncCommunityPetsResponse & { error?: string }> {
   try {
-    const resp = await fetch('/api/codex-pets/sync', {
+    const resp = await fetch(apiUrl('/api/codex-pets/sync'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input ?? {}),
@@ -218,7 +219,7 @@ export async function importSkill(
   input: SkillImportInput,
 ): Promise<{ skill: SkillSummary } | { error: SkillImportError }> {
   try {
-    const resp = await fetch('/api/skills/import', {
+    const resp = await fetch(apiUrl('/api/skills/import'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -262,7 +263,7 @@ export async function updateSkill(
   input: SkillUpdateInput,
 ): Promise<{ skill: SkillSummary } | { error: SkillImportError }> {
   try {
-    const resp = await fetch(`/api/skills/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/skills/${encodeURIComponent(id)}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -312,7 +313,7 @@ export async function deleteSkill(
   id: string,
 ): Promise<{ ok: true } | { error: SkillImportError }> {
   try {
-    const resp = await fetch(`/api/skills/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/skills/${encodeURIComponent(id)}`), {
       method: 'DELETE',
     });
     if (!resp.ok) {
@@ -338,7 +339,7 @@ export async function deleteSkill(
 
 export async function fetchSkill(id: string): Promise<SkillDetail | null> {
   try {
-    const resp = await fetch(`/api/skills/${encodeURIComponent(id)}`);
+    const resp = await fetch(apiUrl(`/api/skills/${encodeURIComponent(id)}`));
     if (!resp.ok) return null;
     return (await resp.json()) as SkillDetail;
   } catch {
@@ -348,7 +349,7 @@ export async function fetchSkill(id: string): Promise<SkillDetail | null> {
 
 export async function fetchDesignSystems(): Promise<DesignSystemSummary[]> {
   try {
-    const resp = await fetch('/api/design-systems');
+    const resp = await fetch(apiUrl('/api/design-systems'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { designSystems: DesignSystemSummary[] };
     return json.designSystems ?? [];
@@ -359,7 +360,7 @@ export async function fetchDesignSystems(): Promise<DesignSystemSummary[]> {
 
 export async function fetchDesignSystem(id: string): Promise<DesignSystemDetail | null> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}`);
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}`));
     if (!resp.ok) return null;
     return parseDesignSystemDetail(await resp.json());
   } catch {
@@ -371,7 +372,7 @@ export async function fetchDesignSystemFiles(
   id: string,
 ): Promise<DesignSystemFileSummary[]> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}/files`);
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}/files`));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { files: DesignSystemFileSummary[] };
     return json.files ?? [];
@@ -400,7 +401,7 @@ export async function ensureDesignSystemWorkspace(
   id: string,
 ): Promise<{ project: Project; files: ProjectFile[] } | null> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}/workspace`, {
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}/workspace`), {
       method: 'POST',
     });
     if (!resp.ok) return null;
@@ -432,7 +433,7 @@ export async function createDesignSystemDraft(
   input: DesignSystemDraftInput,
 ): Promise<DesignSystemDetail | null> {
   try {
-    const resp = await fetch('/api/design-systems', {
+    const resp = await fetch(apiUrl('/api/design-systems'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -448,7 +449,7 @@ export async function startDesignSystemGenerationJob(
   input: DesignSystemDraftInput,
 ): Promise<DesignSystemGenerationJob | null> {
   try {
-    const resp = await fetch('/api/design-systems/generation-jobs', {
+    const resp = await fetch(apiUrl('/api/design-systems/generation-jobs'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -465,7 +466,7 @@ export async function fetchDesignSystemGenerationJob(
   id: string,
 ): Promise<DesignSystemGenerationJob | null> {
   try {
-    const resp = await fetch(`/api/design-systems/generation-jobs/${encodeURIComponent(id)}`);
+    const resp = await fetch(apiUrl(`/api/design-systems/generation-jobs/${encodeURIComponent(id)}`));
     if (!resp.ok) return null;
     const json = (await resp.json()) as { job?: DesignSystemGenerationJob };
     return json.job ?? null;
@@ -479,7 +480,7 @@ export async function fetchProjectDesignSystemPackageAudit(
 ): Promise<DesignSystemPackageAudit | null> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/design-system-package-audit`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/design-system-package-audit`),
       { cache: 'no-store' },
     );
     if (!resp.ok) return null;
@@ -494,7 +495,7 @@ export async function fetchDesignSystemRevisions(
   id: string,
 ): Promise<DesignSystemRevision[]> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}/revisions`);
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}/revisions`));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { revisions?: DesignSystemRevision[] };
     return json.revisions ?? [];
@@ -510,7 +511,7 @@ export async function updateDesignSystemRevisionStatus(
 ): Promise<DesignSystemRevision | null> {
   try {
     const resp = await fetch(
-      `/api/design-systems/${encodeURIComponent(id)}/revisions/${encodeURIComponent(revisionId)}`,
+      apiUrl(`/api/design-systems/${encodeURIComponent(id)}/revisions/${encodeURIComponent(revisionId)}`),
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -530,7 +531,7 @@ export async function startDesignSystemRevisionJob(
   input: DesignSystemRevisionJobRequest,
 ): Promise<DesignSystemGenerationJob | null> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}/revision-jobs`, {
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}/revision-jobs`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -548,7 +549,7 @@ export async function updateDesignSystemDraft(
   input: Partial<DesignSystemDraftInput>,
 ): Promise<DesignSystemDetail | null> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -562,7 +563,7 @@ export async function updateDesignSystemDraft(
 
 export async function deleteDesignSystemDraft(id: string): Promise<boolean> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}`), {
       method: 'DELETE',
     });
     return resp.ok;
@@ -575,7 +576,7 @@ export async function importLocalDesignSystem(
   input: ImportLocalDesignSystemRequest,
 ): Promise<ImportLocalDesignSystemResponse | { error: SkillImportError }> {
   try {
-    const resp = await fetch('/api/design-systems/import/local', {
+    const resp = await fetch(apiUrl('/api/design-systems/import/local'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -597,7 +598,7 @@ export async function importGitHubDesignSystem(
   input: ImportGitHubDesignSystemRequest,
 ): Promise<ImportGitHubDesignSystemResponse | { error: SkillImportError }> {
   try {
-    const resp = await fetch('/api/design-systems/import/github', {
+    const resp = await fetch(apiUrl('/api/design-systems/import/github'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -629,7 +630,7 @@ async function readImportError(resp: Response): Promise<SkillImportError> {
 
 export async function fetchPromptTemplates(): Promise<PromptTemplateSummary[]> {
   try {
-    const resp = await fetch('/api/prompt-templates');
+    const resp = await fetch(apiUrl('/api/prompt-templates'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { promptTemplates: PromptTemplateSummary[] };
     return json.promptTemplates ?? [];
@@ -644,7 +645,7 @@ export async function fetchPromptTemplate(
 ): Promise<PromptTemplateDetail | null> {
   try {
     const resp = await fetch(
-      `/api/prompt-templates/${encodeURIComponent(surface)}/${encodeURIComponent(id)}`,
+      apiUrl(`/api/prompt-templates/${encodeURIComponent(surface)}/${encodeURIComponent(id)}`),
     );
     if (!resp.ok) return null;
     const json = (await resp.json()) as { promptTemplate: PromptTemplateDetail };
@@ -656,7 +657,7 @@ export async function fetchPromptTemplate(
 
 export async function daemonIsLive(): Promise<boolean> {
   try {
-    const resp = await fetch('/api/health');
+    const resp = await fetch(apiUrl('/api/health'));
     return resp.ok;
   } catch {
     return false;
@@ -665,7 +666,7 @@ export async function daemonIsLive(): Promise<boolean> {
 
 export async function fetchConnectors(): Promise<ConnectorDetail[]> {
   try {
-    const resp = await fetch('/api/connectors');
+    const resp = await fetch(apiUrl('/api/connectors'));
     if (!resp.ok) return [];
     const json = (await resp.json()) as ConnectorListResponse;
     return json.connectors ?? [];
@@ -678,7 +679,7 @@ export async function fetchConnectorStatuses(options?: {
   signal?: AbortSignal;
 }): Promise<ConnectorStatusResponse['statuses']> {
   try {
-    const resp = await fetch('/api/connectors/status', { signal: options?.signal });
+    const resp = await fetch(apiUrl('/api/connectors/status'), { signal: options?.signal });
     if (!resp.ok) return {};
     const json = (await resp.json()) as ConnectorStatusResponse;
     return json.statuses ?? {};
@@ -701,7 +702,7 @@ export async function fetchConnectorDiscovery(options: { refresh?: boolean } = {
   const promise = (async () => {
     try {
       const params = options.refresh ? '?refresh=true' : '';
-      const resp = await fetch(`/api/connectors/discovery${params}`);
+      const resp = await fetch(apiUrl(`/api/connectors/discovery${params}`));
       if (!resp.ok) return [];
       const json = (await resp.json()) as ConnectorDiscoveryResponse;
       const connectors = json.connectors ?? [];
@@ -727,7 +728,7 @@ export async function fetchConnectorDetail(
     if (options.toolsLimit !== undefined) params.set('toolsLimit', String(options.toolsLimit));
     if (options.toolsCursor) params.set('toolsCursor', options.toolsCursor);
     const query = params.toString();
-    const resp = await fetch(`/api/connectors/${encodeURIComponent(connectorId)}${query ? `?${query}` : ''}`);
+    const resp = await fetch(apiUrl(`/api/connectors/${encodeURIComponent(connectorId)}${query ? `?${query}` : ''}`));
     if (!resp.ok) return null;
     const json = (await resp.json()) as ConnectorDetailResponse;
     return json.connector ?? null;
@@ -752,7 +753,7 @@ export async function openExternalUrl(url: string): Promise<boolean> {
     if (opened.ok) return true;
   }
   try {
-    const resp = await fetch('/api/system/open-external', {
+    const resp = await fetch(apiUrl('/api/system/open-external'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
@@ -801,7 +802,7 @@ export async function connectConnector(connectorId: string): Promise<ConnectorAc
       title: 'Opening authorization…',
       body: 'The auth config is ready. Preparing the provider authorization page.',
     });
-    const resp = await fetch(`/api/connectors/${encodeURIComponent(connectorId)}/connect`, {
+    const resp = await fetch(apiUrl(`/api/connectors/${encodeURIComponent(connectorId)}/connect`), {
       method: 'POST',
     });
     if (!resp.ok) {
@@ -856,7 +857,7 @@ export async function connectConnector(connectorId: string): Promise<ConnectorAc
 }
 
 async function prepareConnectorAuthConfig(connectorId: string): Promise<{ status: 'ready' } | { status: 'error'; message: string }> {
-  const resp = await fetch('/api/connectors/auth-configs/prepare', {
+  const resp = await fetch(apiUrl('/api/connectors/auth-configs/prepare'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ connectorIds: [connectorId] }),
@@ -1001,7 +1002,7 @@ function escapeHtmlAttribute(value: string): string {
 
 export async function disconnectConnector(connectorId: string): Promise<ConnectorDetail | null> {
   try {
-    const resp = await fetch(`/api/connectors/${encodeURIComponent(connectorId)}/connection`, {
+    const resp = await fetch(apiUrl(`/api/connectors/${encodeURIComponent(connectorId)}/connection`), {
       method: 'DELETE',
     });
     if (!resp.ok) return null;
@@ -1014,7 +1015,7 @@ export async function disconnectConnector(connectorId: string): Promise<Connecto
 
 export async function cancelConnectorAuthorization(connectorId: string): Promise<ConnectorDetail | null> {
   try {
-    const resp = await fetch(`/api/connectors/${encodeURIComponent(connectorId)}/authorization/cancel`, {
+    const resp = await fetch(apiUrl(`/api/connectors/${encodeURIComponent(connectorId)}/authorization/cancel`), {
       method: 'POST',
     });
     if (!resp.ok) return null;
@@ -1039,7 +1040,7 @@ function isAppVersionInfo(value: unknown): value is AppVersionInfo {
 
 export async function fetchAppVersionInfo(): Promise<AppVersionInfo | null> {
   try {
-    const resp = await fetch('/api/version');
+    const resp = await fetch(apiUrl('/api/version'));
     if (!resp.ok) return null;
     const json = (await resp.json()) as Partial<AppVersionResponse>;
     return isAppVersionInfo(json.version) ? json.version : null;
@@ -1056,7 +1057,7 @@ export type LatestGithubReleaseInfo = {
 
 export async function fetchLatestGithubReleaseInfo(): Promise<LatestGithubReleaseInfo | null> {
   try {
-    const resp = await fetch('/api/github/open-design/releases/latest');
+    const resp = await fetch(apiUrl('/api/github/open-design/releases/latest'));
     if (!resp.ok) return null;
     const json = (await resp.json()) as Partial<OpenDesignGithubLatestReleaseResponse>;
     if (typeof json.tag_name !== 'string' || typeof json.html_url !== 'string') return null;
@@ -1099,7 +1100,7 @@ export async function fetchSkillExample(
     return { unavailable: true, kind: previewType };
   }
   try {
-    const resp = await fetch(`/api/skills/${encodeURIComponent(id)}/example`);
+    const resp = await fetch(apiUrl(`/api/skills/${encodeURIComponent(id)}/example`));
     if (!resp.ok) {
       if (resp.status === 404) {
         return { unavailable: true, kind: 'html' };
@@ -1117,7 +1118,7 @@ export async function fetchDeployConfig(
   providerId?: WebDeployProviderId,
 ): Promise<WebDeployConfigResponse | null> {
   try {
-    const resp = await fetch(`/api/deploy/config${deployProviderQuery(providerId)}`);
+    const resp = await fetch(apiUrl(`/api/deploy/config${deployProviderQuery(providerId)}`));
     if (!resp.ok) return null;
     return (await resp.json()) as WebDeployConfigResponse;
   } catch {
@@ -1129,7 +1130,7 @@ export async function updateDeployConfig(
   input: WebUpdateDeployConfigRequest,
 ): Promise<WebDeployConfigResponse | null> {
   try {
-    const resp = await fetch('/api/deploy/config', {
+    const resp = await fetch(apiUrl('/api/deploy/config'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -1149,7 +1150,7 @@ export async function updateDeployConfig(
 
 export async function fetchCloudflarePagesZones(): Promise<WebCloudflarePagesZonesResponse | null> {
   try {
-    const resp = await fetch('/api/deploy/cloudflare-pages/zones');
+    const resp = await fetch(apiUrl('/api/deploy/cloudflare-pages/zones'));
     if (!resp.ok) {
       const payload = (await resp.json().catch(() => null)) as
         | { error?: { message?: string }; message?: string }
@@ -1167,7 +1168,7 @@ export async function fetchProjectDeployments(
   projectId: string,
 ): Promise<WebDeploymentInfo[]> {
   try {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/deployments`);
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/deployments`));
     if (!resp.ok) return [];
     const json = (await resp.json()) as ProjectDeploymentsResponse;
     return (json.deployments ?? []) as WebDeploymentInfo[];
@@ -1187,7 +1188,7 @@ export async function deployProjectFile(
     providerId,
     ...(cloudflarePages ? { cloudflarePages } : {}),
   };
-  const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/deploy`, {
+  const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/deploy`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -1206,7 +1207,7 @@ export async function checkDeploymentLink(
   deploymentId: string,
 ): Promise<WebDeployProjectFileResponse> {
   const resp = await fetch(
-    `/api/projects/${encodeURIComponent(projectId)}/deployments/${encodeURIComponent(deploymentId)}/check-link`,
+    apiUrl(`/api/projects/${encodeURIComponent(projectId)}/deployments/${encodeURIComponent(deploymentId)}/check-link`),
     { method: 'POST' },
   );
   if (!resp.ok) {
@@ -1222,7 +1223,7 @@ export async function checkDeploymentLink(
 
 export async function fetchProjectFiles(projectId: string): Promise<ProjectFile[]> {
   try {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files`);
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/files`));
     if (!resp.ok) return [];
     const json = (await resp.json()) as { files: ProjectFile[] };
     return json.files ?? [];
@@ -1233,7 +1234,7 @@ export async function fetchProjectFiles(projectId: string): Promise<ProjectFile[
 
 export async function fetchLiveArtifacts(projectId: string): Promise<LiveArtifactSummary[]> {
   try {
-    const resp = await fetch(`/api/live-artifacts?projectId=${encodeURIComponent(projectId)}`);
+    const resp = await fetch(apiUrl(`/api/live-artifacts?projectId=${encodeURIComponent(projectId)}`));
     if (!resp.ok) return [];
     const json = (await resp.json()) as {
       artifacts?: LiveArtifactSummary[];
@@ -1289,7 +1290,7 @@ export async function refreshLiveArtifact(
   let resp: Response;
   try {
     resp = await fetch(
-      `/api/live-artifacts/${encodeURIComponent(artifactId)}/refresh?projectId=${encodeURIComponent(projectId)}`,
+      apiUrl(`/api/live-artifacts/${encodeURIComponent(artifactId)}/refresh?projectId=${encodeURIComponent(projectId)}`),
       { method: 'POST' },
     );
   } catch (error) {
@@ -1313,7 +1314,7 @@ export async function fetchLiveArtifactRefreshes(
 ): Promise<LiveArtifactRefreshLogEntry[]> {
   try {
     const resp = await fetch(
-      `/api/live-artifacts/${encodeURIComponent(artifactId)}/refreshes?projectId=${encodeURIComponent(projectId)}`,
+      apiUrl(`/api/live-artifacts/${encodeURIComponent(artifactId)}/refreshes?projectId=${encodeURIComponent(projectId)}`),
     );
     if (!resp.ok) return [];
     const json = (await resp.json()) as { refreshes?: LiveArtifactRefreshLogEntry[] };
@@ -1334,7 +1335,7 @@ export async function updateLiveArtifact(
   let resp: Response;
   try {
     resp = await fetch(
-      `/api/live-artifacts/${encodeURIComponent(artifactId)}?projectId=${encodeURIComponent(projectId)}`,
+      apiUrl(`/api/live-artifacts/${encodeURIComponent(artifactId)}?projectId=${encodeURIComponent(projectId)}`),
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1362,7 +1363,7 @@ export async function updateLiveArtifact(
 export async function deleteLiveArtifact(projectId: string, artifactId: string): Promise<boolean> {
   try {
     const resp = await fetch(
-      `/api/live-artifacts/${encodeURIComponent(artifactId)}?projectId=${encodeURIComponent(projectId)}`,
+      apiUrl(`/api/live-artifacts/${encodeURIComponent(artifactId)}?projectId=${encodeURIComponent(projectId)}`),
       { method: 'DELETE' },
     );
     return resp.ok;
@@ -1385,14 +1386,14 @@ async function readApiErrorBody(resp: Response): Promise<{ message: string; code
 }
 
 export function liveArtifactDetailUrl(projectId: string, artifactId: string): string {
-  return `/api/live-artifacts/${encodeURIComponent(artifactId)}?projectId=${encodeURIComponent(projectId)}`;
+  return apiUrl(`/api/live-artifacts/${encodeURIComponent(artifactId)}?projectId=${encodeURIComponent(projectId)}`);
 }
 
 export type LiveArtifactPreviewVariant = 'rendered' | 'template' | 'rendered-source';
 
 export function liveArtifactPreviewUrl(projectId: string, artifactId: string, variant: LiveArtifactPreviewVariant = 'rendered'): string {
   const variantQuery = variant === 'rendered' ? '' : `&variant=${encodeURIComponent(variant)}`;
-  return `/api/live-artifacts/${encodeURIComponent(artifactId)}/preview?projectId=${encodeURIComponent(projectId)}${variantQuery}`;
+  return apiUrl(`/api/live-artifacts/${encodeURIComponent(artifactId)}/preview?projectId=${encodeURIComponent(projectId)}${variantQuery}`);
 }
 
 export async function fetchLiveArtifactCode(
@@ -1430,7 +1431,7 @@ export async function fetchProjectFilePreview(
 ): Promise<ProjectFilePreview | null> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(name)}/preview`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(name)}/preview`),
     );
     if (!resp.ok) return null;
     return (await resp.json()) as ProjectFilePreview;
@@ -1483,7 +1484,7 @@ export async function fetchPreviewComments(
 ): Promise<PreviewComment[]> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/comments`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/comments`),
     );
     if (!resp.ok) return [];
     const json = (await resp.json()) as { comments: PreviewComment[] };
@@ -1500,7 +1501,7 @@ export async function upsertPreviewComment(
 ): Promise<PreviewComment | null> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/comments`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/comments`),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1523,7 +1524,7 @@ export async function patchPreviewCommentStatus(
 ): Promise<PreviewComment | null> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/comments/${encodeURIComponent(commentId)}`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/comments/${encodeURIComponent(commentId)}`),
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1545,7 +1546,7 @@ export async function deletePreviewComment(
 ): Promise<boolean> {
   try {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/comments/${encodeURIComponent(commentId)}`,
+      apiUrl(`/api/projects/${encodeURIComponent(projectId)}/conversations/${encodeURIComponent(conversationId)}/comments/${encodeURIComponent(commentId)}`),
       { method: 'DELETE' },
     );
     return resp.ok;
@@ -1575,7 +1576,7 @@ export async function writeProjectTextFileDetailed(
   options?: { artifactManifest?: ArtifactManifest },
 ): Promise<WriteProjectTextFileResult> {
   try {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, {
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/files`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, content, artifactManifest: options?.artifactManifest }),
@@ -1602,7 +1603,7 @@ export async function writeProjectBase64File(
   base64: string,
 ): Promise<ProjectFile | null> {
   try {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, {
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/files`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, content: base64, encoding: 'base64' }),
@@ -1624,7 +1625,7 @@ export async function uploadProjectFile(
     const form = new FormData();
     form.append('file', file);
     if (desiredName) form.append('name', desiredName);
-    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, {
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/files`), {
       method: 'POST',
       body: form,
     });
@@ -1672,7 +1673,7 @@ export async function uploadProjectFiles(
 
     try {
       const resp = await fetch(
-        `/api/projects/${encodeURIComponent(projectId)}/upload`,
+        apiUrl(`/api/projects/${encodeURIComponent(projectId)}/upload`),
         { method: 'POST', body: form },
       );
 
@@ -1737,7 +1738,7 @@ export function projectRawUrl(projectId: string, filePath: string): string {
     .split('/')
     .map((seg) => encodeURIComponent(seg))
     .join('/');
-  return `/api/projects/${encodeURIComponent(projectId)}/raw/${safePath}`;
+  return apiUrl(`/api/projects/${encodeURIComponent(projectId)}/raw/${safePath}`);
 }
 
 function looksLikeImage(name: string): boolean {
@@ -1764,7 +1765,7 @@ export async function renameProjectFile(
   from: string,
   to: string,
 ): Promise<RenameProjectFileResponse> {
-  const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files/rename`, {
+  const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/files/rename`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ from, to }),
@@ -1778,7 +1779,7 @@ export async function renameProjectFile(
 
 export async function openFolderDialog(): Promise<string | null> {
   try {
-    const resp = await fetch('/api/dialog/open-folder', { method: 'POST' });
+    const resp = await fetch(apiUrl('/api/dialog/open-folder'), { method: 'POST' });
     if (!resp.ok) return null;
     const data = await resp.json();
     return typeof data.path === 'string' && data.path.length > 0 ? data.path : null;
@@ -1800,7 +1801,7 @@ export async function replaceProjectWorkingDir(
     headers['x-od-desktop-import-token'] = desktopImportToken;
   }
   const resp = await fetch(
-    `/api/projects/${encodeURIComponent(projectId)}/working-dir`,
+    apiUrl(`/api/projects/${encodeURIComponent(projectId)}/working-dir`),
     {
       method: 'POST',
       headers,
@@ -1820,7 +1821,7 @@ export async function replaceProjectWorkingDir(
 export async function fetchHostEditors(): Promise<
   import('@open-design/contracts').HostEditorsResponse
 > {
-  const resp = await fetch('/api/editors');
+  const resp = await fetch(apiUrl('/api/editors'));
   if (!resp.ok) throw new Error(`GET /api/editors failed: ${resp.status}`);
   return (await resp.json()) as import('@open-design/contracts').HostEditorsResponse;
 }
@@ -1830,7 +1831,7 @@ export async function openProjectInEditor(
   editorId: import('@open-design/contracts').HostEditorId,
 ): Promise<import('@open-design/contracts').OpenProjectInEditorResponse> {
   const resp = await fetch(
-    `/api/projects/${encodeURIComponent(projectId)}/open-in`,
+    apiUrl(`/api/projects/${encodeURIComponent(projectId)}/open-in`),
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1846,7 +1847,7 @@ export async function openProjectInEditor(
 
 export async function fetchDesignSystemPreview(id: string): Promise<string | null> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}/preview`);
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}/preview`));
     if (!resp.ok) return null;
     return await resp.text();
   } catch {
@@ -1856,7 +1857,7 @@ export async function fetchDesignSystemPreview(id: string): Promise<string | nul
 
 export async function fetchDesignSystemShowcase(id: string): Promise<string | null> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}/showcase`);
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}/showcase`));
     if (!resp.ok) return null;
     return await resp.text();
   } catch {
@@ -1880,7 +1881,7 @@ export async function fetchPluginPreviewHtml(
 ): Promise<SkillExampleResult> {
   try {
     const resp = await fetch(
-      `/api/plugins/${encodeURIComponent(id)}/preview`,
+      apiUrl(`/api/plugins/${encodeURIComponent(id)}/preview`),
     );
     if (!resp.ok) {
       if (resp.status === 404) return { unavailable: true, kind: 'html' };
@@ -1902,7 +1903,7 @@ export async function fetchPluginExampleHtml(
 ): Promise<SkillExampleResult> {
   try {
     const resp = await fetch(
-      `/api/plugins/${encodeURIComponent(pluginId)}/example/${encodeURIComponent(stem)}`,
+      apiUrl(`/api/plugins/${encodeURIComponent(pluginId)}/example/${encodeURIComponent(stem)}`),
     );
     if (!resp.ok) {
       if (resp.status === 404) return { unavailable: true, kind: 'html' };
@@ -1926,7 +1927,7 @@ export async function fetchPluginAssetText(
 ): Promise<string | null> {
   try {
     const resp = await fetch(
-      `/api/plugins/${encodeURIComponent(pluginId)}/asset/${encodePluginAssetPath(relpath)}`,
+      apiUrl(`/api/plugins/${encodeURIComponent(pluginId)}/asset/${encodePluginAssetPath(relpath)}`),
     );
     if (!resp.ok) return null;
     return await resp.text();
@@ -1948,7 +1949,7 @@ export async function installSkill(
   input: InstallInput,
 ): Promise<{ skill: SkillSummary } | { error: string }> {
   try {
-    const resp = await fetch('/api/skills/install', {
+    const resp = await fetch(apiUrl('/api/skills/install'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -1965,7 +1966,7 @@ export async function uninstallSkill(
   id: string,
 ): Promise<{ ok: true } | { error: string }> {
   try {
-    const resp = await fetch(`/api/skills/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/skills/${encodeURIComponent(id)}`), {
       method: 'DELETE',
     });
     const json = await resp.json();
@@ -1980,7 +1981,7 @@ export async function installDesignSystem(
   input: InstallInput,
 ): Promise<{ designSystem: DesignSystemSummary } | { error: string }> {
   try {
-    const resp = await fetch('/api/design-systems/install', {
+    const resp = await fetch(apiUrl('/api/design-systems/install'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -1997,7 +1998,7 @@ export async function uninstallDesignSystem(
   id: string,
 ): Promise<{ ok: true } | { error: string }> {
   try {
-    const resp = await fetch(`/api/design-systems/${encodeURIComponent(id)}`, {
+    const resp = await fetch(apiUrl(`/api/design-systems/${encodeURIComponent(id)}`), {
       method: 'DELETE',
     });
     const json = await resp.json();

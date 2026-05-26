@@ -1,0 +1,36 @@
+name: open-design-nginx
+
+services:
+  open-design:
+    container_name: open-design-nginx
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        OPEN_DESIGN_IMAGE: ${OPEN_DESIGN_IMAGE:-docker.io/vanjayak/open-design:latest}
+    restart: always
+    ports:
+      - "${OPEN_DESIGN_PORT:-18080}:80"
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=256}
+      OD_BIND_HOST: 127.0.0.1
+      OD_PORT: 7456
+      OD_WEB_PORT: ${OPEN_DESIGN_PORT:-18080}
+      OD_ALLOWED_ORIGINS: ${OPEN_DESIGN_ALLOWED_ORIGINS:-}
+      # Claude Code credentials
+      ANTHROPIC_AUTH_TOKEN: ${ANTHROPIC_AUTH_TOKEN:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+    volumes:
+      - open_design_data:/app/.od
+    mem_limit: ${OPEN_DESIGN_MEM_LIMIT:-512m}
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/nginx-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  open_design_data:

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { useAnalytics } from './analytics/provider';
+import { apiUrl } from './utils/web-path';
 import {
   trackFileUploadResult,
   trackProjectCreateResult,
@@ -354,7 +355,7 @@ export function App() {
     const body = activeProjectId
       ? { projectId: activeProjectId, fileName: activeFileName }
       : { active: false };
-    fetch('/api/active', {
+    fetch(apiUrl('/api/active'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

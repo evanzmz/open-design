@@ -12,6 +12,7 @@ import type { ApplyResult, InstalledPluginRecord } from '@open-design/contracts'
 import { applyPlugin } from '../state/projects';
 import { navigate } from '../router';
 import { useI18n } from '../i18n';
+import { apiUrl } from '../utils/web-path';
 
 interface Props {
   pluginId: string;
@@ -26,7 +27,7 @@ export function PluginDetailView(props: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch(`/api/plugins/${encodeURIComponent(props.pluginId)}`)
+    void fetch(apiUrl(`/api/plugins/${encodeURIComponent(props.pluginId)}`))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -171,7 +172,7 @@ export function PluginDetailView(props: Props) {
           <h2>Preview</h2>
           <iframe
             title={`${plugin.title} preview`}
-            src={`/api/plugins/${encodeURIComponent(plugin.id)}/preview`}
+            src={apiUrl(`/api/plugins/${encodeURIComponent(plugin.id)}/preview`)}
             sandbox="allow-scripts"
             className="plugin-detail__preview-frame"
             data-testid="plugin-detail-preview-iframe"
@@ -197,7 +198,7 @@ export function PluginDetailView(props: Props) {
               return (
                 <li key={`${e.path}-${idx}`}>
                   <a
-                    href={`/api/plugins/${encodeURIComponent(plugin.id)}/example/${encodeURIComponent(stem)}`}
+                    href={apiUrl(`/api/plugins/${encodeURIComponent(plugin.id)}/example/${encodeURIComponent(stem)}`)}
                     target="_blank"
                     rel="noreferrer"
                     data-testid={`plugin-detail-example-${stem}`}

@@ -44,6 +44,7 @@ function detectClientType(): 'desktop' | 'web' | 'unknown' {
 }
 import { parseSseFrame } from './sse';
 import { trackRunProgress, trackRunStart, trackRunTerminal } from '../observability/stuck-run';
+import { apiUrl } from '../utils/web-path';
 
 const MAX_TRANSCRIPT_MESSAGE_CHARS = 12_000;
 const LARGE_TOOL_RESULT_CHARS = 8_000;
@@ -282,7 +283,7 @@ export async function streamViaDaemon({
   const body = JSON.stringify(request);
 
   try {
-    const createResp = await fetch('/api/runs', {
+    const createResp = await fetch(apiUrl('/api/runs'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -344,7 +345,7 @@ export async function reattachDaemonRun(options: DaemonReattachOptions): Promise
 
 export async function fetchChatRunStatus(runId: string): Promise<ChatRunStatusResponse | null> {
   try {
-    const resp = await fetch(`/api/runs/${encodeURIComponent(runId)}`);
+    const resp = await fetch(apiUrl(`/api/runs/${encodeURIComponent(runId)}`));
     if (!resp.ok) return null;
     return (await resp.json()) as ChatRunStatusResponse;
   } catch {
@@ -365,7 +366,7 @@ export async function submitChatRunToolResult(
   options: { isError?: boolean } = {},
 ): Promise<{ ok: boolean; status?: number }> {
   try {
-    const resp = await fetch(`/api/runs/${encodeURIComponent(runId)}/tool-result`, {
+    const resp = await fetch(apiUrl(`/api/runs/${encodeURIComponent(runId)}/tool-result`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ toolUseId, content, isError: !!options.isError }),
@@ -391,7 +392,7 @@ export async function reportChatRunFeedback(req: {
   customReason: string;
 }): Promise<void> {
   try {
-    await fetch(`/api/runs/${encodeURIComponent(req.runId)}/feedback`, {
+    await fetch(apiUrl(`/api/runs/${encodeURIComponent(req.runId)}/feedback`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
@@ -407,7 +408,7 @@ export async function listActiveChatRuns(
 ): Promise<ChatRunStatusResponse[]> {
   try {
     const qs = new URLSearchParams({ projectId, conversationId, status: 'active' });
-    const resp = await fetch(`/api/runs?${qs.toString()}`);
+    const resp = await fetch(apiUrl(`/api/runs?${qs.toString()}`));
     if (!resp.ok) return [];
     const body = (await resp.json()) as ChatRunListResponse;
     return body.runs ?? [];
@@ -418,7 +419,7 @@ export async function listActiveChatRuns(
 
 export async function listProjectRuns(): Promise<ChatRunStatusResponse[]> {
   try {
-    const resp = await fetch('/api/runs');
+    const resp = await fetch(apiUrl('/api/runs'));
     if (!resp.ok) return [];
     const body = (await resp.json()) as ChatRunListResponse;
     return body.runs ?? [];
@@ -455,7 +456,7 @@ async function consumeDaemonRun({
   const cancelRun = () => {
     if (canceled) return;
     canceled = true;
-    void fetch(`/api/runs/${encodeURIComponent(runId)}/cancel`, { method: 'POST' }).catch(() => {});
+    void fetch(apiUrl(`/api/runs/${encodeURIComponent(runId)}/cancel`), { method: 'POST' }).catch(() => {});
   };
 
   cancelSignal?.addEventListener('abort', cancelRun, { once: true });
@@ -469,7 +470,7 @@ async function consumeDaemonRun({
       const qs = lastEventId ? `?after=${encodeURIComponent(lastEventId)}` : '';
       let resp: Response;
       try {
-        resp = await fetch(`/api/runs/${encodeURIComponent(runId)}/events${qs}`, {
+        resp = await fetch(apiUrl(`/api/runs/${encodeURIComponent(runId)}/events${qs}`), {
           method: 'GET',
           signal,
         });
@@ -725,7 +726,7 @@ export async function saveArtifact(
   html: string,
 ): Promise<{ url: string; path: string } | null> {
   try {
-    const resp = await fetch('/api/artifacts/save', {
+    const resp = await fetch(apiUrl('/api/artifacts/save'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, title, html }),

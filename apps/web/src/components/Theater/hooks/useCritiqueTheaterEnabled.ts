@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../../../utils/web-path';
 
 const STORAGE_KEY = 'open-design:config';
 const TOGGLE_EVENT = 'open-design:critique-theater-toggle';
@@ -179,7 +180,7 @@ export function setCritiqueTheaterEnabled(
     const projectId = options.projectId;
     const fetcher = options.fetchProjectSettings
       ?? ((url: string, init: RequestInit) => fetch(url, init));
-    const projectUrl = `/api/projects/${encodeURIComponent(projectId)}`;
+    const projectUrl = apiUrl(`/api/projects/${encodeURIComponent(projectId)}`);
     (async () => {
       let existingMetadata: Record<string, unknown> = {};
       try {

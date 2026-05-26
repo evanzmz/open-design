@@ -9,6 +9,7 @@ import type {
   ConnectionTestResponse,
   ProviderTestRequest,
 } from '../types';
+import { apiUrl } from '../utils/web-path';
 
 function requestModel(body: ConnectionTestRequest): string | undefined {
   const model = (body as { model?: unknown }).model;
@@ -22,7 +23,7 @@ async function postTest(
 ): Promise<ConnectionTestResponse> {
   const start = Date.now();
   try {
-    const response = await fetch('/api/test/connection', {
+    const response = await fetch(apiUrl('/api/test/connection'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),

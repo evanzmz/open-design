@@ -156,7 +156,7 @@ describe('<CritiqueTheaterMount> (Phase 9.1)', () => {
 
     expect(fetchInterrupt).toHaveBeenCalledTimes(1);
     expect(fetchCalls[0]!.url).toBe(
-      '/api/projects/proj-42/critique/run-abc/interrupt',
+      '/open-design/api/projects/proj-42/critique/run-abc/interrupt',
     );
     expect(fetchCalls[0]!.init.method).toBe('POST');
   });

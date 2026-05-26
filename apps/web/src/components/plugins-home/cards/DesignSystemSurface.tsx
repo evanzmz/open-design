@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import type { DesignPreviewSpec } from '../preview';
+import { apiUrl } from '../../../utils/web-path';
 
 interface Props {
   preview: DesignPreviewSpec;
@@ -34,7 +35,7 @@ export function DesignSystemSurface({ preview, inView }: Props) {
           {ready ? (
             <iframe
               title={`${preview.brand} showcase preview`}
-              src={`/api/design-systems/${encodeURIComponent(preview.designSystemId)}/showcase`}
+              src={apiUrl(`/api/design-systems/${encodeURIComponent(preview.designSystemId)}/showcase`)}
               sandbox="allow-scripts"
               loading="lazy"
               tabIndex={-1}

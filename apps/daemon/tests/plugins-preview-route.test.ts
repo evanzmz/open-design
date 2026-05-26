@@ -145,9 +145,29 @@ describe('GET /api/plugins/:id/preview', () => {
     const csp = resp.headers.get('content-security-policy') ?? '';
     expect(csp).toContain("default-src 'none'");
     expect(csp).toContain("connect-src 'none'");
+    expect(csp).not.toContain('https://cdn.tailwindcss.com');
     expect(resp.headers.get('x-content-type-options')).toBe('nosniff');
     const body = await resp.text();
     expect(body).toContain('preview body');
+  });
+
+  it('allows trusted bundled previews to load declared CDN assets while keeping fetch locked down', async () => {
+    const dbPath = path.join(serverRuntimeDataRoot, 'app.sqlite');
+    const db = new Database(dbPath);
+    db.prepare(
+      `UPDATE installed_plugins
+       SET source_kind = 'bundled', trust = 'bundled'
+       WHERE id = ?`,
+    ).run(PLUGIN_ID);
+    db.close();
+
+    const resp = await fetch(`${baseUrl}/api/plugins/${PLUGIN_ID}/preview`);
+    expect(resp.status).toBe(200);
+    const csp = resp.headers.get('content-security-policy') ?? '';
+    expect(csp).toContain('https://cdn.tailwindcss.com');
+    expect(csp).toContain('https://fonts.googleapis.com');
+    expect(csp).toContain('https://fonts.gstatic.com');
+    expect(csp).toContain("connect-src 'none'");
   });
 
   it('returns 404 when the plugin id is unknown', async () => {
@@ -180,6 +200,37 @@ describe('GET /api/plugins/:id/example/:name', () => {
     expect(body).toContain(
       `/api/plugins/${encodeURIComponent(PLUGIN_ID)}/asset/examples/wrapped/hero.png`,
     );
+  });
+
+  it('inlines the official Open Design GitHub metric so preview CSP can keep connect-src locked down', async () => {
+    const dbPath = path.join(serverRuntimeDataRoot, 'app.sqlite');
+    const db = new Database(dbPath);
+    const row = db.prepare('SELECT fs_path, manifest_json FROM installed_plugins WHERE id = ?').get(PLUGIN_ID) as
+      | { fs_path: string; manifest_json: string }
+      | undefined;
+    const manifest = JSON.parse(row?.manifest_json ?? '{}') as any;
+    manifest.od.useCase.exampleOutputs.push({ path: 'examples/github.html', title: 'GitHub' });
+    db.prepare(
+      `UPDATE installed_plugins
+       SET source_kind = 'bundled', trust = 'bundled', manifest_json = ?
+       WHERE id = ?`,
+    ).run(JSON.stringify(manifest), PLUGIN_ID);
+    db.close();
+    await writeFile(
+      path.join(row!.fs_path, 'examples', 'github.html'),
+      `<!DOCTYPE html><script>
+        fetch('https://api.github.com/repos/nexu-io/open-design', {
+          headers: { Accept: 'application/vnd.github+json' }
+        }).then(function (r) { return r.json(); });
+      </script>`,
+    );
+
+    const resp = await fetch(`${baseUrl}/api/plugins/${PLUGIN_ID}/example/github`);
+    expect(resp.status).toBe(200);
+    expect(resp.headers.get('content-security-policy') ?? '').toContain("connect-src 'none'");
+    const body = await resp.text();
+    expect(body).not.toContain('https://api.github.com/repos/nexu-io/open-design');
+    expect(body).toContain('Promise.resolve({ ok:');
   });
 
   it('rejects traversal segments with 400', async () => {

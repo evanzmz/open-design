@@ -7,6 +7,7 @@ import { testAgent, testApiProvider } from '../../src/providers/connection-test'
 import type { ConnectionTestResponse } from '../../src/types';
 
 const realFetch = globalThis.fetch;
+const api = (path: string) => `/open-design${path}`;
 
 beforeEach(() => {
   // Each test installs its own stub.
@@ -48,7 +49,7 @@ describe('testApiProvider', () => {
     expect(result).toEqual(expected);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe('/api/test/connection');
+    expect(url).toBe(api('/api/test/connection'));
     expect(init.method).toBe('POST');
     expect(init.headers['content-type']).toBe('application/json');
     expect(JSON.parse(init.body)).toMatchObject({
@@ -127,7 +128,7 @@ describe('testAgent', () => {
 
     expect(result.kind).toBe('agent_not_installed');
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe('/api/test/connection');
+    expect(url).toBe(api('/api/test/connection'));
     expect(JSON.parse(init.body)).toEqual({
       mode: 'agent',
       agentId: 'devin',

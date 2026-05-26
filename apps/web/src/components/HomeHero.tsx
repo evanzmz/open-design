@@ -33,6 +33,7 @@ import type {
 } from '@open-design/contracts';
 import type { SkillSummary } from '../types';
 import { isImeComposing } from '../utils/imeComposing';
+import { assetUrl } from '../utils/web-path';
 import { Icon, type IconName } from './Icon';
 import { PluginInputsForm } from './PluginInputsForm';
 import { useAnalytics } from '../analytics/provider';
@@ -630,7 +631,7 @@ export const HomeHero = forwardRef<HTMLTextAreaElement, Props>(function HomeHero
     <section className="home-hero" data-testid="home-hero">
       <div className="home-hero__brand" aria-hidden>
         <span className="home-hero__brand-mark">
-          <img src="/app-icon.svg" alt="" draggable={false} />
+          <img src={assetUrl('/app-icon.svg')} alt="" draggable={false} />
         </span>
         <span className="home-hero__brand-name">Open Design</span>
       </div>
@@ -2175,35 +2176,35 @@ function footerInputValueIcon(field: InputFieldSpec, value: string): IconName | 
 
 function modelOptionIcon(value: string, label: string): ModelOptionIconSpec {
   const normalized = `${value} ${label}`.toLowerCase();
-  if (normalized.includes('dall-e')) return { label: 'OpenAI', tone: 'dalle', src: '/model-icons/openai.svg' };
+  if (normalized.includes('dall-e')) return { label: 'OpenAI', tone: 'dalle', src: assetUrl('/model-icons/openai.svg') };
   if (normalized.includes('gpt-image') || normalized.includes('openai') || normalized.includes('sora')) {
-    return { label: 'OpenAI', tone: 'openai', src: '/model-icons/openai.svg' };
+    return { label: 'OpenAI', tone: 'openai', src: assetUrl('/model-icons/openai.svg') };
   }
   if (normalized.includes('seedream') || normalized.includes('seededit') || normalized.includes('seedance') || normalized.includes('doubao') || normalized.includes('bytedance')) {
-    return { label: 'ByteDance', tone: 'seed', src: '/model-icons/bytedance.svg' };
+    return { label: 'ByteDance', tone: 'seed', src: assetUrl('/model-icons/bytedance.svg') };
   }
   if (normalized.includes('senseaudio')) return { label: 'SA', tone: 'sense' };
   if (normalized.includes('grok') || normalized.includes('xai') || normalized.includes('xai/')) {
-    return { label: 'xAI', tone: 'grok', src: '/model-icons/x.svg' };
+    return { label: 'xAI', tone: 'grok', src: assetUrl('/model-icons/x.svg') };
   }
   if (normalized.includes('gemini') || normalized.includes('imagen') || normalized.includes('veo') || normalized.includes('google') || normalized.includes('nano-banana')) {
-    return { label: 'Google Gemini', tone: 'google', src: '/model-icons/google-gemini.svg' };
+    return { label: 'Google Gemini', tone: 'google', src: assetUrl('/model-icons/google-gemini.svg') };
   }
   if (normalized.includes('flux') || normalized.includes('bfl') || normalized.includes('black-forest')) {
-    return { label: 'FLUX', tone: 'flux', src: '/model-icons/flux.svg' };
+    return { label: 'FLUX', tone: 'flux', src: assetUrl('/model-icons/flux.svg') };
   }
-  if (normalized.includes('openrouter')) return { label: 'OpenRouter', tone: 'router', src: '/model-icons/openrouter.svg' };
+  if (normalized.includes('openrouter')) return { label: 'OpenRouter', tone: 'router', src: assetUrl('/model-icons/openrouter.svg') };
   if (normalized.includes('imagerouter') || normalized.includes('/')) return { label: 'IR', tone: 'router' };
   if (normalized.includes('eleven')) {
-    return { label: 'ElevenLabs', tone: 'elevenlabs', src: '/model-icons/elevenlabs.svg' };
+    return { label: 'ElevenLabs', tone: 'elevenlabs', src: assetUrl('/model-icons/elevenlabs.svg') };
   }
   if (normalized.includes('fish')) {
-    return { label: 'Fish Audio', tone: 'fishaudio', src: '/model-icons/fishaudio.svg' };
+    return { label: 'Fish Audio', tone: 'fishaudio', src: assetUrl('/model-icons/fishaudio.svg') };
   }
   if (normalized.includes('minimax')) {
-    return { label: 'MiniMax', tone: 'minimax', src: '/model-icons/minimax.svg' };
+    return { label: 'MiniMax', tone: 'minimax', src: assetUrl('/model-icons/minimax.svg') };
   }
-  if (normalized.includes('suno')) return { label: 'Suno', tone: 'suno', src: '/model-icons/suno.svg' };
+  if (normalized.includes('suno')) return { label: 'Suno', tone: 'suno', src: assetUrl('/model-icons/suno.svg') };
   if (
     normalized.includes('udio') ||
     normalized.includes('audio') ||

@@ -8,6 +8,7 @@ import {
   settingsSectionToTracking,
 } from '@open-design/contracts/analytics';
 import { useAnalytics } from '../analytics/provider';
+import { apiUrl } from '../utils/web-path';
 import {
   trackSettingsAppearanceClick,
   trackSettingsByokTestResult,
@@ -3963,7 +3964,7 @@ export async function persistConfigAndRunOrbit(
     });
   }
   await syncConfigToDaemon(config, { throwOnError: true });
-  const response = await fetch('/api/orbit/run', {
+  const response = await fetch(apiUrl('/api/orbit/run'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ locale: options?.locale ?? null }),
@@ -4078,7 +4079,7 @@ function OrbitSection({
 
   const refreshStatus = async () => {
     try {
-      const response = await fetch('/api/orbit/status');
+      const response = await fetch(apiUrl('/api/orbit/status'));
       if (!response.ok) return;
       if (!isMountedRef.current) return;
       setStatus(await response.json() as OrbitStatusResponse);
@@ -4227,7 +4228,7 @@ function OrbitSection({
   const lastRunAbs = lastRun ? new Date(lastRun.completedAt).toLocaleString() : null;
   const lastRunRel = formatRelative(lastRun?.completedAt, t);
   const liveArtifactHref = lastRun?.artifactId && lastRun?.artifactProjectId
-    ? `/api/live-artifacts/${encodeURIComponent(lastRun.artifactId)}/preview?projectId=${encodeURIComponent(lastRun.artifactProjectId)}`
+    ? apiUrl(`/api/live-artifacts/${encodeURIComponent(lastRun.artifactId)}/preview?projectId=${encodeURIComponent(lastRun.artifactProjectId)}`)
     : null;
   const isBusy = running || Boolean(status?.running);
 
@@ -5453,7 +5454,7 @@ function IntegrationsSection() {
   // snippet that would silently fail when pasted.
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/mcp/install-info')
+    fetch(apiUrl('/api/mcp/install-info'))
       .then(async (res) => {
         if (!res.ok) throw new Error(`daemon ${res.status}`);
         return (await res.json()) as McpInstallInfo;

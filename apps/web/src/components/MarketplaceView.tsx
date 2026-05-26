@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import type { InstalledPluginRecord } from '@open-design/contracts';
 import { listPlugins } from '../state/projects';
 import { navigate } from '../router';
+import { apiUrl } from '../utils/web-path';
 
 interface Marketplace {
   id: string;
@@ -31,7 +32,7 @@ export function MarketplaceView() {
     let cancelled = false;
     void Promise.all([
       listPlugins(),
-      fetch('/api/marketplaces')
+      fetch(apiUrl('/api/marketplaces'))
         .then((r) => (r.ok ? r.json() : { marketplaces: [] }))
         .then((d) => (d?.marketplaces ?? []) as Marketplace[]),
     ]).then(([rows, mps]) => {

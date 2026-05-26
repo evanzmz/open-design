@@ -4,6 +4,7 @@
 // that in the URL is the simplest way to make it deep-linkable.
 
 import { useEffect, useState } from 'react';
+import { getBasePath, stripBasePath } from './utils/web-path';
 
 // Entry-shell sub-views. The home/project landing renders one of three
 // columns and each sub-view now owns a top-level path so the browser
@@ -39,7 +40,7 @@ export type Route =
   | { kind: 'marketplace-detail'; pluginId: string };
 
 export function parseRoute(pathname: string): Route {
-  const parts = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
+  const parts = stripBasePath(pathname).replace(/\/+$/, '').split('/').filter(Boolean);
   if (parts.length === 0) return { kind: 'home', view: 'home' };
   if (parts[0] === 'onboarding') {
     return { kind: 'home', view: 'onboarding' };
@@ -106,20 +107,21 @@ export function parseRoute(pathname: string): Route {
 }
 
 export function buildPath(route: Route): string {
+  const bp = getBasePath();
   if (route.kind === 'home') {
-    if (route.view === 'onboarding') return '/onboarding';
-    if (route.view === 'projects') return '/projects';
-    if (route.view === 'tasks') return '/automations';
-    if (route.view === 'plugins') return '/plugins';
-    if (route.view === 'design-systems') return '/design-systems';
-    if (route.view === 'integrations') return '/integrations';
-    return '/';
+    if (route.view === 'onboarding') return bp + '/onboarding';
+    if (route.view === 'projects') return bp + '/projects';
+    if (route.view === 'tasks') return bp + '/automations';
+    if (route.view === 'plugins') return bp + '/plugins';
+    if (route.view === 'design-systems') return bp + '/design-systems';
+    if (route.view === 'integrations') return bp + '/integrations';
+    return bp + '/';
   }
-  if (route.kind === 'marketplace') return '/marketplace';
-  if (route.kind === 'marketplace-detail') return `/marketplace/${encodeURIComponent(route.pluginId)}`;
-  if (route.kind === 'design-system-create') return '/design-systems/create';
+  if (route.kind === 'marketplace') return bp + '/marketplace';
+  if (route.kind === 'marketplace-detail') return bp + `/marketplace/${encodeURIComponent(route.pluginId)}`;
+  if (route.kind === 'design-system-create') return bp + '/design-systems/create';
   if (route.kind === 'design-system-detail') {
-    return `/design-systems/${encodeURIComponent(route.designSystemId)}`;
+    return bp + `/design-systems/${encodeURIComponent(route.designSystemId)}`;
   }
   const id = encodeURIComponent(route.projectId);
   const file = route.fileName
@@ -128,10 +130,10 @@ export function buildPath(route: Route): string {
   if (route.conversationId) {
     const cid = encodeURIComponent(route.conversationId);
     return file
-      ? `/projects/${id}/conversations/${cid}/files/${file}`
-      : `/projects/${id}/conversations/${cid}`;
+      ? bp + `/projects/${id}/conversations/${cid}/files/${file}`
+      : bp + `/projects/${id}/conversations/${cid}`;
   }
-  return file ? `/projects/${id}/files/${file}` : `/projects/${id}`;
+  return file ? bp + `/projects/${id}/files/${file}` : bp + `/projects/${id}`;
 }
 
 // Centralized navigation. Components call this instead of mutating

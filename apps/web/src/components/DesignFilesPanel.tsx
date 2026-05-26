@@ -10,6 +10,7 @@ import {
   FILE_SYSTEM_READ_ERROR_MESSAGE,
   isFileSystemReadError,
 } from '../utils/fileSystemErrors';
+import { apiUrl } from '../utils/web-path';
 import type { PluginFolderAgentAction } from './design-files/pluginFolderActions';
 import { getPluginFolderCandidates } from './design-files/pluginFolders';
 import { Icon } from './Icon';
@@ -785,7 +786,7 @@ export function DesignFilesPanel({
     const fileList = [...selected];
     if (fileList.length === 0) return;
     try {
-      const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/archive/batch`, {
+      const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/archive/batch`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: fileList }),

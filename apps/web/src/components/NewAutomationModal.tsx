@@ -19,6 +19,7 @@ import type { SkillSummary } from '../types';
 import { listPlugins } from '../state/projects';
 import { fetchMcpServers, type McpServerConfig } from '../state/mcp';
 import { inlineMentionToken } from '../utils/inlineMentions';
+import { apiUrl } from '../utils/web-path';
 
 type ProjectSummary = { id: string; name: string };
 type ScheduleKind = RoutineSchedule['kind'];
@@ -489,7 +490,7 @@ export function NewAutomationModal({
           context: body.context,
         }
         : body;
-      const res = await fetch(url, {
+      const res = await fetch(apiUrl(url), {
         method: isEdit ? 'PATCH' : 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),

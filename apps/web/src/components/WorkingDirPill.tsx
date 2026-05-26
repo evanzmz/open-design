@@ -10,6 +10,7 @@ import {
 } from '../providers/registry';
 import { useT } from '../i18n';
 import type { Project } from '../types';
+import { apiUrl } from '../utils/web-path';
 import { Icon } from './Icon';
 
 const RECENT_DIRS_KEY = 'open-design:recent-working-dirs';
@@ -67,7 +68,7 @@ export function WorkingDirPill({ projectId, resolvedDir: propResolvedDir, onRepl
   useEffect(() => {
     if (propResolvedDir !== undefined) return;
     let cancelled = false;
-    void fetch(`/api/projects/${encodeURIComponent(projectId)}`)
+    void fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}`))
       .then((resp) => (resp.ok ? resp.json() : null))
       .then((data) => {
         if (cancelled || !data) return;

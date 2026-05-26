@@ -31,6 +31,7 @@ const HOST = process.env.OD_HOST || "127.0.0.1";
 if (process.env.OD_HOST != null && !/^[a-zA-Z0-9._\-:[\]@]+$/.test(process.env.OD_HOST)) {
   throw new Error(`OD_HOST contains invalid characters: ${process.env.OD_HOST}`);
 }
+const BASE_PATH = normalizeBasePath(process.env.OD_BASE_PATH ?? "/open-design");
 const DAEMON_HOST = "127.0.0.1";
 const STANDALONE_BACKEND_HOST = "127.0.0.1";
 const DAEMON_PORT_ENV = SIDECAR_ENV.DAEMON_PORT;
@@ -203,7 +204,24 @@ function resolveDaemonOrigin(): string | null {
   return port === 0 ? null : `http://${DAEMON_HOST}:${port}`;
 }
 
+function normalizeBasePath(value: string): string {
+  if (!value || value === "/") return "";
+  const prefixed = value.startsWith("/") ? value : `/${value}`;
+  return prefixed.replace(/\/+$/u, "");
+}
+
 function isDaemonProxyPathname(pathname: string): boolean {
+  if (BASE_PATH && (pathname === BASE_PATH || pathname.startsWith(`${BASE_PATH}/`))) {
+    const stripped = pathname.slice(BASE_PATH.length) || "/";
+    return (
+      stripped === "/api" ||
+      stripped.startsWith("/api/") ||
+      stripped === "/artifacts" ||
+      stripped.startsWith("/artifacts/") ||
+      stripped === "/frames" ||
+      stripped.startsWith("/frames/")
+    );
+  }
   return (
     pathname === "/api" ||
     pathname.startsWith("/api/") ||
@@ -212,6 +230,19 @@ function isDaemonProxyPathname(pathname: string): boolean {
     pathname === "/frames" ||
     pathname.startsWith("/frames/")
   );
+}
+
+function isFaviconRequestPathname(pathname: string): boolean {
+  return (
+    pathname === "/favicon.ico" ||
+    (BASE_PATH.length > 0 && pathname === `${BASE_PATH}/favicon.ico`)
+  );
+}
+
+function redirectFaviconRequest(response: ServerResponse): void {
+  response.statusCode = 308;
+  response.setHeader("location", `${BASE_PATH}/app-icon.png`);
+  response.end();
 }
 
 export function resolveDaemonProxyTarget(
@@ -658,7 +689,7 @@ async function createWebSidecarHandle(
     pid: process.pid,
     state: "running",
     updatedAt: new Date().toISOString(),
-    url: `http://${HOST}:${port}`,
+    url: `http://${HOST}:${port}${BASE_PATH}`,
   };
   let ipcServer: JsonIpcServerHandle | null = null;
   let stopped = false;
@@ -722,11 +753,17 @@ async function createWebSidecarHandle(
   };
 }
 
-function createDaemonProxyHandler(
+export function createDaemonProxyHandler(
   daemonOrigin: string | null,
   fallback: (request: IncomingMessage, response: ServerResponse) => Promise<void>,
 ): (request: IncomingMessage, response: ServerResponse) => void {
   return (request, response) => {
+    const requestPathname = resolveHttpProxyTarget(`http://${HOST}`, request.url)?.pathname;
+    if (requestPathname != null && isFaviconRequestPathname(requestPathname)) {
+      redirectFaviconRequest(response);
+      return;
+    }
+
     const daemonProxyTarget = daemonOrigin == null ? null : resolveDaemonProxyTarget(daemonOrigin, request.url);
     if (daemonProxyTarget != null) {
       const localPort = request.socket.localPort;

@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Project, ProjectDetailResponse } from '@open-design/contracts';
+import { apiUrl } from '../utils/web-path';
 
 export interface ProjectDetailState {
   project: Project | null;
@@ -27,7 +28,7 @@ export function useProjectDetail(projectId: string): ProjectDetailState {
       setLoading(true);
       setError(null);
       try {
-        const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+        const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}`), {
           signal,
         });
         if (!resp.ok) {

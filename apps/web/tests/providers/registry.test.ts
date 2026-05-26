@@ -23,6 +23,8 @@ import {
   writeProjectTextFileDetailed,
 } from '../../src/providers/registry';
 
+const api = (path: string) => `/open-design${path}`;
+
 describe('fetchAppVersionInfo', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -119,7 +121,7 @@ describe('fetchSkillExample', () => {
     await expect(fetchSkillExample('blog-post')).resolves.toEqual({
       html: '<html><body>ok</body></html>',
     });
-    expect(fetchMock).toHaveBeenCalledWith('/api/skills/blog-post/example');
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/skills/blog-post/example'));
   });
 
   it('treats missing html previews as unavailable instead of an error', async () => {
@@ -134,7 +136,7 @@ describe('fetchSkillExample', () => {
     });
     // Confirm the dispatch did call through to the daemon for the html
     // path (i.e. the short-circuit above only catches non-html types).
-    expect(fetchMock).toHaveBeenCalledWith('/api/skills/design-brief/example');
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/skills/design-brief/example'));
   });
 
   it('forwards real html preview fetch failures as discriminated errors', async () => {
@@ -146,7 +148,7 @@ describe('fetchSkillExample', () => {
     await expect(fetchSkillExample('design-brief', 'html')).resolves.toEqual({
       error: 'HTTP 500',
     });
-    expect(fetchMock).toHaveBeenCalledWith('/api/skills/design-brief/example');
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/skills/design-brief/example'));
   });
 });
 
@@ -175,7 +177,7 @@ describe('fetchPluginPreviewHtml', () => {
       fetchPluginPreviewHtml('example-live-artifact'),
     ).resolves.toEqual({ unavailable: true, kind: 'html' });
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/plugins/example-live-artifact/preview',
+      api('/api/plugins/example-live-artifact/preview'),
     );
   });
 
@@ -219,7 +221,7 @@ describe('fetchPluginExampleHtml', () => {
       fetchPluginExampleHtml('example-live-artifact', 'index'),
     ).resolves.toEqual({ unavailable: true, kind: 'html' });
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/plugins/example-live-artifact/example/index',
+      api('/api/plugins/example-live-artifact/example/index'),
     );
   });
 
@@ -253,7 +255,7 @@ describe('fetchProjectFileText', () => {
     ).resolves.toBe('<svg />');
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/projects/project-1/raw/diagram.svg?cacheBust=1710000000-2',
+      api('/api/projects/project-1/raw/diagram.svg?cacheBust=1710000000-2'),
       { cache: 'no-store' },
     );
   });
@@ -271,7 +273,7 @@ describe('fetchProjectFileText', () => {
         projectId: 'project-1',
         status: 404,
         statusText: 'Not Found',
-        url: '/api/projects/project-1/raw/missing.svg',
+        url: api('/api/projects/project-1/raw/missing.svg'),
       }),
     );
   });
@@ -291,7 +293,7 @@ describe('fetchProjectFileText', () => {
         error,
         name: 'diagram.svg',
         projectId: 'project-1',
-        url: '/api/projects/project-1/raw/diagram.svg',
+        url: api('/api/projects/project-1/raw/diagram.svg'),
       }),
     );
   });
@@ -322,7 +324,7 @@ describe('fetchProjectDesignSystemPackageAudit', () => {
     await expect(fetchProjectDesignSystemPackageAudit('ds acme')).resolves.toEqual(audit);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/projects/ds%20acme/design-system-package-audit',
+      api('/api/projects/ds%20acme/design-system-package-audit'),
       { cache: 'no-store' },
     );
   });
@@ -354,7 +356,7 @@ describe('fetchConnectorDiscovery', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith('/api/connectors/discovery?refresh=true');
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/connectors/discovery?refresh=true'));
   });
 });
 
@@ -388,7 +390,7 @@ describe('fetchConnectorDetail', () => {
       tools: [{ name: 'canvas.list_courses' }],
     });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/connectors/canvas?hydrateTools=true&toolsLimit=50&toolsCursor=cursor_1');
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/connectors/canvas?hydrateTools=true&toolsLimit=50&toolsCursor=cursor_1'));
   });
 });
 
@@ -414,7 +416,7 @@ describe('connectConnector', () => {
       location: { assign: vi.fn() },
     });
     const fetchMock = vi.fn(async (url: string) => {
-      if (url === '/api/connectors/auth-configs/prepare') {
+      if (url === api('/api/connectors/auth-configs/prepare')) {
         return new Response(JSON.stringify({
           results: {
             airtable: { status: 'ready', authConfigId: 'ac_airtable' },
@@ -445,10 +447,10 @@ describe('connectConnector', () => {
     expect(replace).toHaveBeenCalledWith('https://connect.composio.dev/link/lk_test?a=1&b=2');
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      '/api/connectors/auth-configs/prepare',
+      api('/api/connectors/auth-configs/prepare'),
       expect.objectContaining({ method: 'POST' }),
     );
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/connectors/airtable/connect', { method: 'POST' });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, api('/api/connectors/airtable/connect'), { method: 'POST' });
   });
 
   it('keeps the popup open with the auth config error when initialization fails', async () => {
@@ -494,14 +496,14 @@ describe('connectConnector', () => {
       location: { assign },
     } as unknown as Window & typeof globalThis);
     const fetchMock = vi.fn(async (url: string) => {
-      if (url === '/api/connectors/auth-configs/prepare') {
+      if (url === api('/api/connectors/auth-configs/prepare')) {
         return new Response(JSON.stringify({
           results: {
             github: { status: 'ready', authConfigId: 'ac_github' },
           },
         }), { status: 200 });
       }
-      if (url === '/api/system/open-external') {
+      if (url === api('/api/system/open-external')) {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       }
       return new Response(JSON.stringify({
@@ -518,12 +520,12 @@ describe('connectConnector', () => {
     expect(open).toHaveBeenCalledTimes(1);
     expect(open).toHaveBeenCalledWith('about:blank', '_blank');
     expect(assign).not.toHaveBeenCalled();
-    expect(fetchMock).toHaveBeenCalledWith('/api/system/open-external', {
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/system/open-external'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: 'https://example.com/oauth' }),
     });
-    expect(fetchMock).not.toHaveBeenCalledWith('/api/connectors/github/authorization/cancel', {
+    expect(fetchMock).not.toHaveBeenCalledWith(api('/api/connectors/github/authorization/cancel'), {
       method: 'POST',
     });
   });
@@ -542,7 +544,7 @@ describe('connectConnector', () => {
       location: { assign: vi.fn() },
     });
     const fetchMock = vi.fn(async (url: string) => {
-      if (url === '/api/connectors/auth-configs/prepare') {
+      if (url === api('/api/connectors/auth-configs/prepare')) {
         return new Response(JSON.stringify({
           results: { twitter: { status: 'ready', authConfigId: 'ac_twitter' } },
         }), { status: 200 });
@@ -574,7 +576,7 @@ describe('connectConnector', () => {
       host: { shell: { openExternal } },
     });
     const fetchMock = vi.fn(async (url: string) => {
-      if (url === '/api/connectors/auth-configs/prepare') {
+      if (url === api('/api/connectors/auth-configs/prepare')) {
         return new Response(JSON.stringify({
           results: {
             github: { status: 'ready', authConfigId: 'ac_github' },
@@ -610,7 +612,7 @@ describe('connectConnector', () => {
       host: { shell: { openExternal } },
     });
     const fetchMock = vi.fn(async (url: string) => {
-      if (url === '/api/connectors/auth-configs/prepare') {
+      if (url === api('/api/connectors/auth-configs/prepare')) {
         return new Response(JSON.stringify({
           results: {
             github: { status: 'ready', authConfigId: 'ac_github' },
@@ -635,7 +637,7 @@ describe('connectConnector', () => {
     }
     expect(open).not.toHaveBeenCalled();
     expect(openExternal).toHaveBeenCalledWith('https://example.com/oauth');
-    expect(fetchMock).not.toHaveBeenCalledWith('/api/connectors/github/authorization/cancel', {
+    expect(fetchMock).not.toHaveBeenCalledWith(api('/api/connectors/github/authorization/cancel'), {
       method: 'POST',
     });
   });
@@ -659,7 +661,7 @@ describe('cancelConnectorAuthorization', () => {
       status: 'available',
       tools: [],
     });
-    expect(fetchMock).toHaveBeenCalledWith('/api/connectors/github/authorization/cancel', {
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/connectors/github/authorization/cancel'), {
       method: 'POST',
     });
   });
@@ -761,7 +763,7 @@ describe('deploy provider registry helpers', () => {
       projectName: '',
     });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/deploy/config?providerId=cloudflare-pages');
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/deploy/config?providerId=cloudflare-pages'));
   });
 
   it('fetches Cloudflare Pages zones from the deploy helper route', async () => {
@@ -776,7 +778,7 @@ describe('deploy provider registry helpers', () => {
       cloudflarePages: { lastZoneId: 'zone-1', lastDomainPrefix: 'demo' },
     });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/deploy/cloudflare-pages/zones');
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/deploy/cloudflare-pages/zones'));
   });
 
   it('sends Cloudflare Pages config fields without dropping provider-specific metadata', async () => {
@@ -802,7 +804,7 @@ describe('deploy provider registry helpers', () => {
       projectName: '',
     });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/deploy/config', {
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/deploy/config'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -841,7 +843,7 @@ describe('deploy provider registry helpers', () => {
       url: 'https://open-design-preview.pages.dev',
     });
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-1/deploy', {
+    expect(fetchMock).toHaveBeenCalledWith(api('/api/projects/project-1/deploy'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -155,6 +155,7 @@ function configuredAllowedDevHosts(): string[] {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: configuredAllowedDevHosts(),
+  basePath: '/open-design',
   outputFileTracingRoot: WORKSPACE_ROOT,
   reactStrictMode: true,
   // Emit browser sourcemaps so packaged-runtime exceptions can be symbolicated
@@ -184,15 +185,34 @@ const nextConfig: NextConfig = {
       }
       : !isProd
       ? {
+        async redirects() {
+          return [
+            {
+              source: '/',
+              destination: '/open-design',
+              basePath: false,
+              permanent: false,
+            },
+          ];
+        },
         async rewrites() {
           // In dev we run the daemon on a sibling port; proxy the app API
           // proxy so the SPA can hit /api, /artifacts, and /frames without
           // CORS gymnastics. SSE on /api/chat works through this rewrite
           // because Next.js's dev server streams responses unbuffered.
           return [
-            { source: '/api/:path*', destination: `${DAEMON_ORIGIN}/api/:path*` },
-            { source: '/artifacts/:path*', destination: `${DAEMON_ORIGIN}/artifacts/:path*` },
-            { source: '/frames/:path*', destination: `${DAEMON_ORIGIN}/frames/:path*` },
+            {
+              source: '/api/:path*',
+              destination: `${DAEMON_ORIGIN}/open-design/api/:path*`,
+            },
+            {
+              source: '/artifacts/:path*',
+              destination: `${DAEMON_ORIGIN}/open-design/artifacts/:path*`,
+            },
+            {
+              source: '/frames/:path*',
+              destination: `${DAEMON_ORIGIN}/open-design/frames/:path*`,
+            },
           ];
         },
         devIndicators: {

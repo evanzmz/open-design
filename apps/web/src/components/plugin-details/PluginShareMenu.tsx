@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { InstalledPluginRecord } from '@open-design/contracts';
 import { Icon } from '../Icon';
 import { derivePluginSourceLinks } from '../../runtime/plugin-source';
+import { pageUrl } from '../../utils/web-path';
 
 interface Props {
   record: InstalledPluginRecord;
@@ -80,7 +81,7 @@ function buildShareUrl(record: InstalledPluginRecord): string {
   if (typeof window === 'undefined') {
     return `/marketplace/${encodeURIComponent(record.id)}`;
   }
-  return `${window.location.origin}/marketplace/${encodeURIComponent(record.id)}`;
+  return `${window.location.origin}${pageUrl('/marketplace/' + encodeURIComponent(record.id))}`;
 }
 
 function buildMarkdownBadge(record: InstalledPluginRecord): string {

@@ -1,5 +1,6 @@
 import { effectiveMaxTokens } from '../state/maxTokens';
 import type { AppConfig, ChatMessage } from '../types';
+import { apiUrl } from '../utils/web-path';
 import type { StreamHandlers } from './anthropic';
 import { parseSseFrame } from './sse';
 
@@ -36,7 +37,7 @@ export async function streamProxyEndpoint(
   let acc = '';
 
   try {
-    const resp = await fetch(endpoint, {
+    const resp = await fetch(apiUrl(endpoint), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

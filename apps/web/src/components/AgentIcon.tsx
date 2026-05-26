@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { assetUrl } from '../utils/web-path';
 
 interface Props {
   id: string;
@@ -55,7 +56,7 @@ export function AgentIcon({ id, size = 36, className }: Props) {
   const ext = ICON_EXT[id];
   if (ext) {
     if (ext === 'svg' && MONO_ICONS.has(id)) {
-      const src = `/agent-icons/${id}.svg`;
+      const src = assetUrl(`/agent-icons/${id}.svg`);
       const style: CSSProperties = {
         width: size,
         height: size,
@@ -72,7 +73,7 @@ export function AgentIcon({ id, size = 36, className }: Props) {
     }
     return (
       <img
-        src={`/agent-icons/${id}.${ext}`}
+        src={assetUrl(`/agent-icons/${id}.${ext}`)}
         alt=""
         width={size}
         height={size}

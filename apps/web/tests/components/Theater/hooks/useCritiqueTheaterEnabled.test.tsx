@@ -292,11 +292,11 @@ describe('useCritiqueTheaterEnabled (Phase 15.3)', () => {
     });
     expect(fetchCalls).toHaveLength(2);
     expect(fetchCalls[0]).toMatchObject({
-      url: '/api/projects/proj-abc',
+      url: '/open-design/api/projects/proj-abc',
       method: 'GET',
     });
     expect(fetchCalls[1]).toMatchObject({
-      url: '/api/projects/proj-abc',
+      url: '/open-design/api/projects/proj-abc',
       method: 'PATCH',
     });
     const body = JSON.parse(fetchCalls[1]!.body ?? '{}');

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCritiqueStream } from './hooks/useCritiqueStream';
 import { TheaterStage } from './TheaterStage';
 import type { CritiqueState } from './state/reducer';
+import { apiUrl } from '../../utils/web-path';
 
 interface Props {
   projectId: string | null;
@@ -92,7 +93,7 @@ export function CritiqueTheaterMount({
     // `interruptPending` so the user can retry, and the real SSE
     // terminal event the daemon emits later still wins.
     const fetcher = fetchInterrupt ?? ((url, init) => fetch(url, init));
-    const url = `/api/projects/${encodeURIComponent(projectId)}/critique/${encodeURIComponent(runId)}/interrupt`;
+    const url = apiUrl(`/api/projects/${encodeURIComponent(projectId)}/critique/${encodeURIComponent(runId)}/interrupt`);
     fetcher(url, { method: 'POST' }).then((res) => {
       if (res.ok) {
         dispatch({ type: 'interrupted', runId, bestRound, composite });

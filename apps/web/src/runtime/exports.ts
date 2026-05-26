@@ -13,6 +13,7 @@
 // artifact server-side, so it lives in ProjectView.tsx (not here).
 
 import { buildSrcdoc, type SrcdocOptions } from './srcdoc';
+import { apiUrl } from '../utils/web-path';
 import { buildReactComponentSrcdoc } from './react-component';
 import { buildZip } from './zip';
 import { randomUUID } from '../utils/uuid';
@@ -408,7 +409,7 @@ export async function exportProjectAsPdf(opts: {
   title: string;
 }): Promise<ProjectPdfExportResult> {
   try {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(opts.projectId)}/export/pdf`, {
+    const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(opts.projectId)}/export/pdf`), {
       body: JSON.stringify({
         deck: opts.deck,
         fileName: opts.filePath,
@@ -495,7 +496,7 @@ export async function exportProjectAsZip(opts: {
     root ? `?root=${encodeURIComponent(root)}` : ''
   }`;
   try {
-    const resp = await fetch(url);
+    const resp = await fetch(apiUrl(url));
     if (!resp.ok) throw new Error(`archive request failed (${resp.status})`);
     const blob = await resp.blob();
     triggerDownload(blob, archiveFilenameFrom(resp, opts.fallbackTitle, root));

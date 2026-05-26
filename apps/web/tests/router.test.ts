@@ -15,7 +15,7 @@
  * project happens to default to.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildPath, parseRoute, type Route } from '../src/router';
 
@@ -24,6 +24,10 @@ function roundTrip(route: Route): Route {
 }
 
 describe('parseRoute / buildPath (issue #1505)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('parses the home route', () => {
     expect(parseRoute('/')).toEqual({ kind: 'home', view: 'home' });
     expect(parseRoute('')).toEqual({ kind: 'home', view: 'home' });
@@ -37,7 +41,7 @@ describe('parseRoute / buildPath (issue #1505)', () => {
       fileName: null,
     };
     expect(roundTrip(route)).toEqual(route);
-    expect(buildPath(route)).toBe('/projects/p-1');
+    expect(buildPath(route)).toBe('/open-design/projects/p-1');
   });
 
   it('round-trips a project + file route (no conversation)', () => {
@@ -48,7 +52,7 @@ describe('parseRoute / buildPath (issue #1505)', () => {
       fileName: 'src/index.tsx',
     };
     expect(roundTrip(route)).toEqual(route);
-    expect(buildPath(route)).toBe('/projects/p-1/files/src/index.tsx');
+    expect(buildPath(route)).toBe('/open-design/projects/p-1/files/src/index.tsx');
   });
 
   it('round-trips a project + conversation route', () => {
@@ -59,7 +63,7 @@ describe('parseRoute / buildPath (issue #1505)', () => {
       fileName: null,
     };
     expect(roundTrip(route)).toEqual(route);
-    expect(buildPath(route)).toBe('/projects/p-1/conversations/conv-abc');
+    expect(buildPath(route)).toBe('/open-design/projects/p-1/conversations/conv-abc');
   });
 
   it('round-trips a project + conversation + file route', () => {
@@ -70,7 +74,7 @@ describe('parseRoute / buildPath (issue #1505)', () => {
       fileName: 'index.html',
     };
     expect(roundTrip(route)).toEqual(route);
-    expect(buildPath(route)).toBe('/projects/p-1/conversations/conv-abc/files/index.html');
+    expect(buildPath(route)).toBe('/open-design/projects/p-1/conversations/conv-abc/files/index.html');
   });
 
   it('percent-encodes ids and file names with reserved characters', () => {
@@ -110,5 +114,24 @@ describe('parseRoute / buildPath (issue #1505)', () => {
   it('falls back to home when the URL is unrecognized', () => {
     expect(parseRoute('/something/else')).toEqual({ kind: 'home', view: 'home' });
     expect(parseRoute('/projects')).toEqual({ kind: 'home', view: 'projects' });
+  });
+
+  it('applies and strips the Next.js basePath', () => {
+    vi.stubGlobal('window', {
+      __NEXT_DATA__: {
+        basePath: '/open-design',
+      },
+    });
+
+    const route: Route = {
+      kind: 'project',
+      projectId: 'p-1',
+      conversationId: null,
+      fileName: null,
+    };
+
+    expect(buildPath(route)).toBe('/open-design/projects/p-1');
+    expect(parseRoute('/open-design/projects/p-1')).toEqual(route);
+    expect(parseRoute('/open-designish/projects/p-1')).toEqual({ kind: 'home', view: 'home' });
   });
 });

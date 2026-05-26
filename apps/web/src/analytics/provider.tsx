@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useI18n } from '../i18n';
+import { apiUrl } from '../utils/web-path';
 import {
   ANALYTICS_HEADER_DEVICE_ID,
   ANALYTICS_HEADER_CLIENT_TYPE,
@@ -99,7 +100,7 @@ export function useAppVersion(): string {
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch('/api/version');
+        const res = await fetch(apiUrl('/api/version'));
         if (!res.ok) return;
         const body = (await res.json()) as { version?: { version?: string } };
         if (cancelled) return;

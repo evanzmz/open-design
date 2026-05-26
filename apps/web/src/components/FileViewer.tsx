@@ -8,6 +8,7 @@ import {
 } from '@open-design/contracts/analytics';
 import { useAnalytics } from '../analytics/provider';
 import { trackIframeLoad } from '../observability/iframe-error';
+import { apiUrl } from '../utils/web-path';
 import {
   trackArtifactExportResult,
   trackArtifactHeaderClick,
@@ -5195,7 +5196,7 @@ function HtmlViewer({
     try {
       const css = serializeInspectOverrides(inspectOverrides).trim();
       const next = applyInspectOverridesToSource(source, css);
-      const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/files`, {
+      const resp = await fetch(apiUrl(`/api/projects/${encodeURIComponent(projectId)}/files`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: file.name, content: next }),

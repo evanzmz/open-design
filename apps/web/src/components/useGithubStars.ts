@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import type { OpenDesignGithubRepoResponse } from '@open-design/contracts';
+import { apiUrl } from '../utils/web-path';
 
 const API = '/api/github/open-design';
 const REPO = 'https://github.com/nexu-io/open-design';
@@ -75,7 +76,7 @@ export function useGithubStars(): number | null {
     const ctrl = new AbortController();
     (async () => {
       try {
-        const res = await fetch(API, {
+        const res = await fetch(apiUrl(API), {
           signal: ctrl.signal,
         });
         if (!res.ok) return;

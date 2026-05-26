@@ -1,4 +1,5 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -8,6 +9,7 @@ import {
   createStandaloneBackendEnv,
   createStandaloneParentMonitorImport,
   createStandaloneServerArgs,
+  createDaemonProxyHandler,
   normalizeDaemonProxyOriginHeader,
   resolveDaemonProxyTarget,
   resolveStandaloneBackendOrigin,
@@ -21,6 +23,16 @@ describe('resolveDaemonProxyTarget', () => {
     expect(target?.href).toBe('http://127.0.0.1:7456/api/projects?limit=10');
   });
 
+  it('keeps the web basePath when proxying to the daemon origin', () => {
+    const target = resolveDaemonProxyTarget('http://127.0.0.1:7456', '/open-design/api/projects?limit=10');
+
+    expect(target?.href).toBe('http://127.0.0.1:7456/open-design/api/projects?limit=10');
+  });
+
+  it('does not strip basePath-like prefixes', () => {
+    expect(resolveDaemonProxyTarget('http://127.0.0.1:7456', '/open-designish/api/projects')).toBeNull();
+  });
+
   it('does not let absolute request URLs replace the daemon origin', () => {
     const target = resolveDaemonProxyTarget(
       'http://127.0.0.1:7456',
@@ -32,6 +44,44 @@ describe('resolveDaemonProxyTarget', () => {
 
   it('rejects non-daemon paths', () => {
     expect(resolveDaemonProxyTarget('http://127.0.0.1:7456', '/settings')).toBeNull();
+  });
+});
+
+describe('createDaemonProxyHandler favicon handling', () => {
+  async function callHandler(path: string) {
+    const headers = new Map<string, string>();
+    let ended = false;
+    const response = {
+      statusCode: 200,
+      setHeader(name: string, value: string) {
+        headers.set(name.toLowerCase(), value);
+      },
+      end() {
+        ended = true;
+      },
+    } as unknown as ServerResponse;
+    const request = { url: path } as unknown as IncomingMessage;
+    const handler = createDaemonProxyHandler(null, async (_request, fallbackResponse) => {
+      fallbackResponse.statusCode = 404;
+      fallbackResponse.end('fallback');
+    });
+
+    handler(request, response);
+
+    return {
+      ended,
+      headers,
+      statusCode: (response as ServerResponse & { statusCode: number }).statusCode,
+    };
+  }
+
+  it('redirects browser favicon probes to the basePath-aware app icon', async () => {
+    for (const path of ['/favicon.ico', '/open-design/favicon.ico']) {
+      const response = await callHandler(path);
+      expect(response.statusCode).toBe(308);
+      expect(response.headers.get('location')).toBe('/open-design/app-icon.png');
+      expect(response.ended).toBe(true);
+    }
   });
 });
 

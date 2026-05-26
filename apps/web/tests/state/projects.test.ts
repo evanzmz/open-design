@@ -9,6 +9,8 @@ import {
   publishGeneratedPluginToGitHub,
 } from '../../src/state/projects';
 
+const api = (path: string) => `/open-design${path}`;
+
 describe('applyPlugin', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -131,7 +133,7 @@ describe('installGeneratedPluginFolder', () => {
 
     expect(outcome.ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/projects/project-1/plugins/install-folder',
+      api('/api/projects/project-1/plugins/install-folder'),
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ path: 'generated-plugin' }),
@@ -187,7 +189,7 @@ describe('generated plugin share actions', () => {
     expect(contribute).toMatchObject({ ok: true, message: 'Ready' });
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      '/api/projects/project-1/plugins/publish-github',
+      api('/api/projects/project-1/plugins/publish-github'),
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ path: 'generated-plugin' }),
@@ -195,7 +197,7 @@ describe('generated plugin share actions', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      '/api/projects/project-1/plugins/contribute-open-design',
+      api('/api/projects/project-1/plugins/contribute-open-design'),
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ path: 'generated-plugin' }),
@@ -248,7 +250,7 @@ describe('createPluginShareProject', () => {
       stagedPath: 'plugin-source/sample-plugin',
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/plugins/sample-plugin/share-project',
+      api('/api/plugins/sample-plugin/share-project'),
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ action: 'publish-github', locale: 'zh-CN' }),

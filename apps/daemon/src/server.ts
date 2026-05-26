@@ -1111,13 +1111,54 @@ const PLUGIN_REGISTRY_DIR = resolveDaemonResourceDir(
 );
 const OFFICIAL_MARKETPLACE_ID = 'official';
 const OFFICIAL_PLUGIN_SOURCE_REPO = 'github:nexu-io/open-design@main';
+const DEFAULT_DAEMON_BASE_PATH = '/open-design';
+
+function normalizeDaemonBasePath(value) {
+  if (!value || value === '/') return '';
+  const prefixed = value.startsWith('/') ? value : `/${value}`;
+  return prefixed.replace(/\/+$/u, '');
+}
+
+function getDaemonBasePath() {
+  return normalizeDaemonBasePath(process.env.OD_BASE_PATH ?? DEFAULT_DAEMON_BASE_PATH);
+}
+
+function stripDaemonBasePath(pathname) {
+  const basePath = getDaemonBasePath();
+  if (!basePath || (pathname !== basePath && !pathname.startsWith(`${basePath}/`))) {
+    return pathname;
+  }
+  return pathname.slice(basePath.length) || '/';
+}
+
+function hasDaemonBasePath(pathname) {
+  const basePath = getDaemonBasePath();
+  return !!basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`));
+}
+
+function applyDaemonBasePath(req, _res, next) {
+  const originalUrl = req.url ?? '';
+  const pathname = originalUrl.split(/[?#]/, 1)[0] || '/';
+  req.odOriginalUrl = originalUrl;
+  req.odHadBasePath = hasDaemonBasePath(pathname);
+  if (!req.odHadBasePath) return next();
+
+  const rest = originalUrl.slice(getDaemonBasePath().length);
+  req.url = rest.length > 0 && rest.startsWith('/') ? rest : `/${rest}`;
+  return next();
+}
 
 export function isStaticSpaFallbackRequest(req) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return false;
-  if (req.path === '/api' || req.path.startsWith('/api/')) return false;
-  if (req.path === '/artifacts' || req.path.startsWith('/artifacts/')) return false;
-  if (req.path === '/frames' || req.path.startsWith('/frames/')) return false;
-  if (req.path === '/_next' || req.path.startsWith('/_next/')) return false;
+  const basePath = getDaemonBasePath();
+  const pathname = stripDaemonBasePath(req.path);
+  if (basePath && !(req.odHadBasePath === true || hasDaemonBasePath(req.odOriginalUrl ?? req.path))) {
+    return false;
+  }
+  if (pathname === '/api' || pathname.startsWith('/api/')) return false;
+  if (pathname === '/artifacts' || pathname.startsWith('/artifacts/')) return false;
+  if (pathname === '/frames' || pathname.startsWith('/frames/')) return false;
+  if (pathname === '/_next' || pathname.startsWith('/_next/')) return false;
 
   const accept = req.get?.('accept') ?? '';
   return accept.length === 0 || accept.includes('text/html') || accept.includes('*/*');
@@ -2620,6 +2661,61 @@ function setLiveArtifactCodeHeaders(res) {
   res.setHeader('Referrer-Policy', 'no-referrer');
 }
 
+const STRICT_PLUGIN_PREVIEW_CSP = [
+  "default-src 'none'",
+  "img-src 'self' data: blob:",
+  "media-src 'self' data: blob:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline'",
+  "connect-src 'none'",
+  "frame-ancestors 'self'",
+].join('; ');
+
+const TRUSTED_PLUGIN_PREVIEW_CSP = [
+  "default-src 'none'",
+  "img-src 'self' data: blob:",
+  "media-src 'self' data: blob:",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com",
+  "connect-src 'none'",
+  "frame-ancestors 'self'",
+].join('; ');
+
+function isTrustedPluginPreview(plugin) {
+  return (
+    plugin?.sourceKind === 'bundled' ||
+    plugin?.trust === 'bundled' ||
+    plugin?.marketplaceTrust === 'official' ||
+    plugin?.sourceMarketplaceId === OFFICIAL_MARKETPLACE_ID
+  );
+}
+
+function rewriteOpenDesignGithubFetches(html) {
+  if (typeof html !== 'string' || !html.includes('https://api.github.com/repos/nexu-io/open-design')) {
+    return html;
+  }
+
+  const payload = openDesignGithubRepoCache
+    ? {
+      full_name: 'nexu-io/open-design',
+      html_url: 'https://github.com/nexu-io/open-design',
+      stargazers_count: openDesignGithubRepoCache.stargazersCount,
+      fetchedAt: openDesignGithubRepoCache.fetchedAt,
+      stale: Date.now() - openDesignGithubRepoCache.fetchedAt >= OPEN_DESIGN_GITHUB_CACHE_TTL_MS,
+    }
+    : null;
+
+  const replacement = payload
+    ? `Promise.resolve({ ok: true, json: function () { return Promise.resolve(${JSON.stringify(payload)}); } })`
+    : `Promise.resolve({ ok: false, json: function () { return Promise.resolve(null); } })`;
+
+  return html.replace(
+    /fetch\(\s*(['"])https:\/\/api\.github\.com\/repos\/nexu-io\/open-design\1\s*(?:,\s*\{[\s\S]*?\}\s*)?\)/g,
+    replacement,
+  );
+}
+
 const OPEN_DESIGN_GITHUB_REPO_API = 'https://api.github.com/repos/nexu-io/open-design';
 const OPEN_DESIGN_GITHUB_RELEASE_LATEST_API = 'https://api.github.com/repos/nexu-io/open-design/releases/latest';
 const OPEN_DESIGN_GITHUB_CACHE_TTL_MS = 60 * 60 * 1000;
@@ -3424,6 +3520,7 @@ export async function startServer({
   }
 
   const app = express();
+  app.use(applyDaemonBasePath);
   app.use(express.json({ limit: '4mb' }));
 
   // Plan §3.K1 — bearer-token middleware.
@@ -6711,7 +6808,7 @@ export async function startServer({
       }
       res.setHeader(
         'Content-Security-Policy',
-        "default-src 'none'; img-src 'self' data: blob:; media-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'none'; frame-ancestors 'self'",
+        isTrustedPluginPreview(plugin) ? TRUSTED_PLUGIN_PREVIEW_CSP : STRICT_PLUGIN_PREVIEW_CSP,
       );
       res.setHeader('X-Content-Type-Options', 'nosniff');
       const ext = path.extname(contentPath).toLowerCase();
@@ -6727,11 +6824,11 @@ export async function startServer({
       res.setHeader('Content-Type', ct);
       if (ext === '.html' && typeof contentRel === 'string') {
         buf = Buffer.from(
-          rewritePluginAssetUrls(
+          rewriteOpenDesignGithubFetches(rewritePluginAssetUrls(
             buf.toString('utf8'),
             req.params.id,
             path.posix.dirname(contentRel.replace(/\\/g, '/')),
-          ),
+          )),
           'utf8',
         );
       }
@@ -6974,7 +7071,7 @@ export async function startServer({
       // no network, no external resources, no document-level forms.
       res.setHeader(
         'Content-Security-Policy',
-        "default-src 'none'; img-src 'self' data: blob:; media-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'none'; frame-ancestors 'self'",
+        isTrustedPluginPreview(plugin) ? TRUSTED_PLUGIN_PREVIEW_CSP : STRICT_PLUGIN_PREVIEW_CSP,
       );
       res.setHeader('X-Content-Type-Options', 'nosniff');
       const ext = path.extname(resolved).toLowerCase();

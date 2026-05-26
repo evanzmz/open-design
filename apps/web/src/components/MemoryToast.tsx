@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { MemoryChangeEvent } from '@open-design/contracts';
 import { useT } from '../i18n';
+import { apiUrl } from '../utils/web-path';
 
 interface ActiveToast {
   key: number;
@@ -36,7 +37,7 @@ export function MemoryToast({ onOpenMemory }: Props) {
     // Guard for environments without EventSource (jsdom in tests, SSR).
     // The toast is purely a UX nicety; no SSE just means no auto-pop-up.
     if (typeof EventSource === 'undefined') return;
-    const es = new EventSource('/api/memory/events');
+    const es = new EventSource(apiUrl('/api/memory/events'));
     es.addEventListener('change', (raw) => {
       try {
         const event = JSON.parse((raw as MessageEvent).data) as MemoryChangeEvent;

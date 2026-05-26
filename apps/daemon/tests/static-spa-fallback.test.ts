@@ -5,20 +5,36 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { resolveStaticSpaFallbackPath } from '../src/server.js';
 
+type TestRequest = {
+  get(name: string): string | undefined;
+  method: string;
+  path: string;
+  odHadBasePath?: boolean;
+  odOriginalUrl?: string;
+};
+
 describe('static SPA fallback', () => {
   let tempDir: string;
+  let previousBasePath: string | undefined;
 
   beforeEach(() => {
+    previousBasePath = process.env.OD_BASE_PATH;
+    process.env.OD_BASE_PATH = '';
     tempDir = mkdtempSync(path.join(os.tmpdir(), 'od-static-spa-'));
     writeFileSync(path.join(tempDir, 'index.html'), '<!doctype html><div id="root"></div>');
     writeFileSync(path.join(tempDir, 'app-icon.svg'), '<svg />');
   });
 
   afterEach(() => {
+    if (previousBasePath == null) {
+      delete process.env.OD_BASE_PATH;
+    } else {
+      process.env.OD_BASE_PATH = previousBasePath;
+    }
     rmSync(tempDir, { force: true, recursive: true });
   });
 
-  function request(pathname: string, accept = 'text/html', method = 'GET') {
+  function request(pathname: string, accept = 'text/html', method = 'GET'): TestRequest {
     return {
       get(name: string) {
         return name.toLowerCase() === 'accept' ? accept : undefined;
@@ -52,5 +68,54 @@ describe('static SPA fallback', () => {
     } finally {
       rmSync(emptyDir, { force: true, recursive: true });
     }
+  });
+});
+
+describe('static SPA fallback with OD_BASE_PATH', () => {
+  let tempDir: string;
+  let previousBasePath: string | undefined;
+
+  beforeEach(() => {
+    previousBasePath = process.env.OD_BASE_PATH;
+    process.env.OD_BASE_PATH = '/open-design';
+    tempDir = mkdtempSync(path.join(os.tmpdir(), 'od-static-spa-basepath-'));
+    writeFileSync(path.join(tempDir, 'index.html'), '<!doctype html><div id="root"></div>');
+  });
+
+  afterEach(() => {
+    if (previousBasePath == null) {
+      delete process.env.OD_BASE_PATH;
+    } else {
+      process.env.OD_BASE_PATH = previousBasePath;
+    }
+    rmSync(tempDir, { force: true, recursive: true });
+  });
+
+  function request(pathname: string, accept = 'text/html', method = 'GET'): TestRequest {
+    const normalizedPath = pathname.startsWith('/open-design/')
+      ? pathname.slice('/open-design'.length)
+      : pathname;
+    return {
+      get(name: string) {
+        return name.toLowerCase() === 'accept' ? accept : undefined;
+      },
+      method,
+      path: normalizedPath,
+      odHadBasePath: pathname === '/open-design' || pathname.startsWith('/open-design/'),
+      odOriginalUrl: pathname,
+    };
+  }
+
+  it('serves the SPA shell only under the configured basePath', async () => {
+    expect(resolveStaticSpaFallbackPath(request('/open-design/projects/proj-1'), tempDir))
+      .toBe(path.join(tempDir, 'index.html'));
+    expect(resolveStaticSpaFallbackPath(request('/projects/proj-1'), tempDir)).toBeNull();
+  });
+
+  it('leaves prefixed API and static misses to downstream 404 handling', async () => {
+    expect(resolveStaticSpaFallbackPath(request('/open-design/api/routines/nope'), tempDir)).toBeNull();
+    expect(resolveStaticSpaFallbackPath(request('/open-design/artifacts/missing'), tempDir)).toBeNull();
+    expect(resolveStaticSpaFallbackPath(request('/open-design/frames/missing'), tempDir)).toBeNull();
+    expect(resolveStaticSpaFallbackPath(request('/open-design/_next/static/missing.js'), tempDir)).toBeNull();
   });
 });

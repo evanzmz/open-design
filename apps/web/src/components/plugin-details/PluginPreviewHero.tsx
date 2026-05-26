@@ -11,6 +11,7 @@
 
 import { useMemo, useState } from 'react';
 import { Icon } from '../Icon';
+import { apiUrl } from '../../utils/web-path';
 
 export interface PluginExampleEntry {
   path: string;
@@ -134,6 +135,6 @@ function normalize(
   const base = segments[segments.length - 1] ?? `${index}`;
   const stem = base.replace(/\.[^.]+$/, '');
   const name = entry.title ?? stem;
-  const href = `/api/plugins/${encodeURIComponent(pluginId)}/example/${encodeURIComponent(stem)}`;
+  const href = apiUrl(`/api/plugins/${encodeURIComponent(pluginId)}/example/${encodeURIComponent(stem)}`);
   return { key: `${entry.path}-${index}`, name, stem, href };
 }

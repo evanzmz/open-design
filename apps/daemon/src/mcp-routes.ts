@@ -293,7 +293,11 @@ function getPublicBaseUrl(req: any) {
 }
 
 function mcpOAuthCallbackUrl(req: any) {
-  return `${getPublicBaseUrl(req)}/api/mcp/oauth/callback`;
+  const basePath = process.env.OD_BASE_PATH ?? '/open-design';
+  const bp = basePath && basePath !== '/'
+    ? `${basePath.startsWith('/') ? '' : '/'}${basePath}`.replace(/\/+$/u, '')
+    : '';
+  return `${getPublicBaseUrl(req)}${bp}/api/mcp/oauth/callback`;
 }
 
 function renderOAuthResultPage(opts: any) {

@@ -2,6 +2,7 @@ import type {
   ProviderModelsRequest,
   ProviderModelsResponse,
 } from '../types';
+import { apiUrl } from '../utils/web-path';
 
 async function postProviderModels(
   body: ProviderModelsRequest,
@@ -9,7 +10,7 @@ async function postProviderModels(
 ): Promise<ProviderModelsResponse> {
   const start = Date.now();
   try {
-    const response = await fetch('/api/provider/models', {
+    const response = await fetch(apiUrl('/api/provider/models'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
