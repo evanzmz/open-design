@@ -31,6 +31,28 @@ warn()    { printf "  ${YELLOW}!${RESET} %s\n" "$1" >&2; }
 error()   { printf "  ${RED}✗${RESET} %s\n" "$1" >&2; }
 info()    { printf "  ${CYAN}›${RESET} %s\n" "$1"; }
 
+normalize_base_path() {
+  local value="${1:-}"
+  if [ -z "$value" ] || [ "$value" = "/" ]; then
+    printf ""
+    return
+  fi
+  case "$value" in
+    /*) ;;
+    *) value="/${value}" ;;
+  esac
+  while [ "${value%/}" != "$value" ]; do
+    value="${value%/}"
+  done
+  printf "%s" "$value"
+}
+
+health_path() {
+  local base_path
+  base_path="$(normalize_base_path "${1:-}")"
+  printf "%s/api/health" "$base_path"
+}
+
 # ---------------------------------------------------------------------------
 # Detect container runtime
 # ---------------------------------------------------------------------------
@@ -80,10 +102,13 @@ printf "\n"
 
 # Read current port from .env if it exists
 PORT=7456
+BASE_PATH="${OPEN_DESIGN_BASE_PATH:-}"
 ENV_FILE="${DEPLOY_DIR}/.env"
 if [ -f "$ENV_FILE" ]; then
   _port="$(grep '^OPEN_DESIGN_PORT=' "$ENV_FILE" | cut -d= -f2)"
   if [ -n "$_port" ]; then PORT="$_port"; fi
+  _base_path="$(grep '^OPEN_DESIGN_BASE_PATH=' "$ENV_FILE" | cut -d= -f2- || true)"
+  if [ -z "${OPEN_DESIGN_BASE_PATH+x}" ]; then BASE_PATH="$_base_path"; fi
 fi
 
 # Override image if specified
@@ -101,7 +126,7 @@ $COMPOSE_CMD "${COMPOSE_FILES[@]}" up -d --no-build
 
 # Health check
 step "Waiting for health check (up to ${HEALTH_TIMEOUT}s)..."
-HEALTH_URL="http://127.0.0.1:${PORT}/api/health"
+HEALTH_URL="http://127.0.0.1:${PORT}$(health_path "$BASE_PATH")"
 HEALTH_OK=0
 ELAPSED=0
 

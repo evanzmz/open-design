@@ -8,6 +8,8 @@
 .ocd
 node_modules
 dist
+apps/web/.next
+apps/web/out
 coverage
 *.log
 tsconfig.tsbuildinfo

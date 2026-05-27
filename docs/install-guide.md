@@ -176,6 +176,7 @@ All settings live in `deploy/.env`. Edit it directly or re-run the installer to 
 | `OPEN_DESIGN_IMAGE` | `docker.io/townsendwu/open-design:latest` | Full image reference |
 | `OPEN_DESIGN_PORT` | `7456` | Host-side port (bound to `127.0.0.1`) |
 | `OPEN_DESIGN_API_TOKEN` | _(generated)_ | Bearer token required for the container daemon bind |
+| `OPEN_DESIGN_BASE_PATH` | _(empty)_ | Optional URL prefix, for example `/od`; empty serves from `/` |
 | `OPEN_DESIGN_ALLOWED_ORIGINS` | _(empty)_ | CORS origins for reverse-proxy setups |
 | `OPEN_DESIGN_MEM_LIMIT` | `384m` | Container memory cap |
 | `NODE_OPTIONS` | `--max-old-space-size=192` | Node.js heap cap inside the container |

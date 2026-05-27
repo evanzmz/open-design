@@ -126,6 +126,15 @@ test('update.sh --help exits 0', async () => {
   assert.match(stdout, /--image/);
 });
 
+test('docker compose leaves base path empty unless configured', async () => {
+  const compose = await readFile(join(repoRoot, 'deploy/docker-compose.yml'), 'utf8');
+  const envExample = await readFile(join(repoRoot, 'deploy/.env.example'), 'utf8');
+
+  assert.match(compose, /OD_BASE_PATH:\s*\$\{OPEN_DESIGN_BASE_PATH:-\}/);
+  assert.doesNotMatch(compose, /OPEN_DESIGN_BASE_PATH:-\/open-design/);
+  assert.match(envExample, /^OPEN_DESIGN_BASE_PATH=$/m);
+});
+
 // ---------------------------------------------------------------------------
 // Docker integration tests — skipped when Docker is unavailable
 // ---------------------------------------------------------------------------

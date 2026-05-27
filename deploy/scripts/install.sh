@@ -86,6 +86,28 @@ generate_api_token() {
   exit 1
 }
 
+normalize_base_path() {
+  local value="${1:-}"
+  if [ -z "$value" ] || [ "$value" = "/" ]; then
+    printf ""
+    return
+  fi
+  case "$value" in
+    /*) ;;
+    *) value="/${value}" ;;
+  esac
+  while [ "${value%/}" != "$value" ]; do
+    value="${value%/}"
+  done
+  printf "%s" "$value"
+}
+
+health_path() {
+  local base_path
+  base_path="$(normalize_base_path "${1:-}")"
+  printf "%s/api/health" "$base_path"
+}
+
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
@@ -370,6 +392,7 @@ fi
 IMAGE="${OPT_IMAGE:-$DEFAULT_IMAGE}"
 API_TOKEN="${OPT_API_TOKEN:-$(generate_api_token)}"
 ALLOWED_ORIGINS=""
+BASE_PATH="${OPEN_DESIGN_BASE_PATH:-}"
 MEM_LIMIT="$DEFAULT_MEM_LIMIT"
 
 if [ "$NON_INTERACTIVE" = "0" ]; then
@@ -385,6 +408,9 @@ if [ "$NON_INTERACTIVE" = "0" ]; then
 
   prompt_text "Allowed origins (CORS, comma-separated, or empty)" ""
   ALLOWED_ORIGINS="$PROMPT_RESULT"
+
+  prompt_text "Base path (empty for /, e.g. /od)" "$BASE_PATH"
+  BASE_PATH="$PROMPT_RESULT"
 
   prompt_text "Memory limit" "$DEFAULT_MEM_LIMIT"
   MEM_LIMIT="$PROMPT_RESULT"
@@ -409,6 +435,7 @@ cat > "$ENV_FILE" << ENVFILE
 OPEN_DESIGN_IMAGE=${IMAGE}
 OPEN_DESIGN_PORT=${PORT}
 OPEN_DESIGN_API_TOKEN=${API_TOKEN}
+OPEN_DESIGN_BASE_PATH=${BASE_PATH}
 OPEN_DESIGN_ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
 OPEN_DESIGN_MEM_LIMIT=${MEM_LIMIT}
 NODE_OPTIONS=--max-old-space-size=192
@@ -430,7 +457,7 @@ $COMPOSE_CMD "${COMPOSE_FILES[@]}" up -d --no-build
 # ---------------------------------------------------------------------------
 step "Waiting for health check (up to ${HEALTH_TIMEOUT}s)..."
 
-HEALTH_URL="http://127.0.0.1:${PORT}/api/health"
+HEALTH_URL="http://127.0.0.1:${PORT}$(health_path "$BASE_PATH")"
 HEALTH_OK=0
 ELAPSED=0
 

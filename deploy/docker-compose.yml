@@ -14,7 +14,7 @@ services:
       OD_BIND_HOST: 0.0.0.0
       OD_ALLOWED_ORIGINS: ${OPEN_DESIGN_ALLOWED_ORIGINS:-}
       OD_API_TOKEN: ${OPEN_DESIGN_API_TOKEN:?Set OPEN_DESIGN_API_TOKEN in deploy/.env. Generate one with openssl rand -hex 32}
-      OD_BASE_PATH: ${OPEN_DESIGN_BASE_PATH:-/open-design}
+      OD_BASE_PATH: ${OPEN_DESIGN_BASE_PATH:-}
       OD_DATA_DIR: /by/.od
       OD_PORT: 7456
       OD_WEB_PORT: ${OPEN_DESIGN_PORT:-7456}
@@ -35,7 +35,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:7456/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+          "const raw=process.env.OD_BASE_PATH||'';const base=raw&&raw!=='/'?'/'+raw.replace(/^\\/+|\\/+$/g,''):'';fetch('http://127.0.0.1:7456'+base+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
         ]
       interval: 30s
       timeout: 5s

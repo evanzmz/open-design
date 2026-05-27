@@ -17,7 +17,7 @@ Defaults:
 
 - Host port: `127.0.0.1:7456` (`OPEN_DESIGN_PORT=8080` to publish on `127.0.0.1:8080`)
 - API token: required as `OPEN_DESIGN_API_TOKEN` because the container daemon binds `0.0.0.0`
-- Runtime base path: `/open-design` (`OPEN_DESIGN_BASE_PATH=/open-design`)
+- Runtime base path: empty by default (`OPEN_DESIGN_BASE_PATH=/od` to serve under `/od`)
 - Runtime data volume: `open_design_data` mounted at `/by/.od`
 - Node heap cap: `--max-old-space-size=192`
 - Compose memory cap: `384m` (`OPEN_DESIGN_MEM_LIMIT=256m` to override)
