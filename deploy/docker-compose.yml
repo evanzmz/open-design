@@ -3,7 +3,7 @@ name: open-design
 services:
   open-design:
     container_name: open-design
-    image: ${OPEN_DESIGN_IMAGE:-docker.io/vanjayak/open-design:latest}
+    image: ${OPEN_DESIGN_IMAGE:-docker.io/townsendwu/open-design:latest}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
@@ -13,12 +13,15 @@ services:
       NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=192}
       OD_BIND_HOST: 0.0.0.0
       OD_ALLOWED_ORIGINS: ${OPEN_DESIGN_ALLOWED_ORIGINS:-}
+      OD_API_TOKEN: ${OPEN_DESIGN_API_TOKEN:?Set OPEN_DESIGN_API_TOKEN in deploy/.env. Generate one with openssl rand -hex 32}
+      OD_BASE_PATH: ${OPEN_DESIGN_BASE_PATH:-/open-design}
+      OD_DATA_DIR: /by/.od
       OD_PORT: 7456
       OD_WEB_PORT: ${OPEN_DESIGN_PORT:-7456}
     ports:
       - "127.0.0.1:${OPEN_DESIGN_PORT:-7456}:7456"
     volumes:
-      - open_design_data:/app/.od
+      - open_design_data:/by/.od
     read_only: true
     tmpfs:
       - /tmp

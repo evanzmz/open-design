@@ -42,12 +42,12 @@ Running the installer without flags launches an interactive wizard:
 [open-design] Docker: Docker version 26.1.3, build b72abbb
 [open-design] Compose: Docker Compose version v2.27.1
 
-Docker image [docker.io/vanjayak/open-design:latest]:
+Docker image [docker.io/townsendwu/open-design:latest]:
 Port [7456]:
 Allowed origins (CORS, comma-separated, or empty) []:
 Memory limit [384m]:
 
-[open-design] Pulling image: docker.io/vanjayak/open-design:latest
+[open-design] Pulling image: docker.io/townsendwu/open-design:latest
 [open-design] Starting Open Design...
 [open-design] Waiting for health check (up to 60s)...
 [open-design] Daemon is healthy (200 OK)
@@ -57,7 +57,7 @@ Memory limit [384m]:
 
 | Prompt | Default | Notes |
 |--------|---------|-------|
-| **Docker image** | `docker.io/vanjayak/open-design:latest` | Pin a digest for reproducibility: `docker.io/vanjayak/open-design@sha256:<digest>` |
+| **Docker image** | `docker.io/townsendwu/open-design:latest` | Pin a digest for reproducibility: `docker.io/townsendwu/open-design@sha256:<digest>` |
 | **Port** | `7456` | The port the daemon listens on. Must not be in use. |
 | **Allowed origins** | _(empty)_ | CORS origins for reverse-proxy setups. See [`network-security.md`](network-security.md). Leave empty for localhost-only use. |
 | **Memory limit** | `384m` | Container memory cap. Raise for large concurrent agent runs. |
@@ -141,7 +141,7 @@ bash deploy/scripts/update.sh
 To update to a specific image:
 
 ```bash
-bash deploy/scripts/update.sh --image=docker.io/vanjayak/open-design@sha256:<digest>
+bash deploy/scripts/update.sh --image=docker.io/townsendwu/open-design@sha256:<digest>
 ```
 
 The update script:
@@ -173,8 +173,9 @@ All settings live in `deploy/.env`. Edit it directly or re-run the installer to 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPEN_DESIGN_IMAGE` | `docker.io/vanjayak/open-design:latest` | Full image reference |
+| `OPEN_DESIGN_IMAGE` | `docker.io/townsendwu/open-design:latest` | Full image reference |
 | `OPEN_DESIGN_PORT` | `7456` | Host-side port (bound to `127.0.0.1`) |
+| `OPEN_DESIGN_API_TOKEN` | _(generated)_ | Bearer token required for the container daemon bind |
 | `OPEN_DESIGN_ALLOWED_ORIGINS` | _(empty)_ | CORS origins for reverse-proxy setups |
 | `OPEN_DESIGN_MEM_LIMIT` | `384m` | Container memory cap |
 | `NODE_OPTIONS` | `--max-old-space-size=192` | Node.js heap cap inside the container |

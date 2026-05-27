@@ -505,7 +505,7 @@ Validation
 
 Deliverables
 
-- [x] `linux/amd64` + `linux/arm64` Dockerfile per spec §15.1 (`deploy/Dockerfile`; entry-slice base is `node:24-alpine` with `NODE_IMAGE` build-arg override → `node:24-bookworm-slim`; bundled atom plugins ship inside the image).
+- [x] `linux/amd64` + `linux/arm64` Dockerfile per spec §15.1 (`deploy/Dockerfile`; entry-slice base is `node:24-slim` with `NODE_IMAGE` build-arg override; bundled atom plugins ship inside the image).
 - [x] CI pushes `:edge` on main, `:<version>` on tag — `.github/workflows/docker-image.yml`.
 - [x] `tools/pack/docker-compose.yml`, `tools/pack/helm/` — chart templates (Deployment / Service / Secret / ConfigMap / PVCs / Ingress / NOTES) shipped, per-cloud `values-<cloud>.yaml` overrides shipped (AWS / GCP / Azure / Aliyun / Tencent / Huawei / self-hosted).
 - [x] Bound-API-token guard: daemon refuses to bind `OD_BIND_HOST=<non-loopback>` without `OD_API_TOKEN`; bearer middleware on `/api/*` skipped only on loopback peers and on the open probes (`/api/health`, `/api/version`, `/api/daemon/status`).

@@ -1617,7 +1617,7 @@ OD ships as a single multi-arch Docker image so the full plugin/marketplace syst
   - Common runtime deps plugins assume: `ffmpeg`, `git`, `ripgrep`.
 - **Excluded**: electron, native macOS/Windows toolchains, dev tooling.
 
-The base image is `node:24-bookworm-slim`. The user inside the container is non-root (`uid 10001`).
+The base image is `node:24-slim`. The user inside the container is non-root (`uid 10001`).
 
 ### 15.2 Persistence
 

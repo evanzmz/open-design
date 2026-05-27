@@ -57,6 +57,7 @@ From the repository root:
 
 ```bash
 cd deploy
+printf "OPEN_DESIGN_API_TOKEN=%s\n" "$(openssl rand -hex 32)" > .env
 docker compose up -d
 ```
 
@@ -113,6 +114,9 @@ Create a `deploy/.env` file to override the default configuration:
 # Port exposed on the host
 OPEN_DESIGN_PORT=7456
 
+# API bearer token required by the daemon when the container binds 0.0.0.0
+OPEN_DESIGN_API_TOKEN=<output-of-openssl-rand-hex-32>
+
 # Container memory limit
 OPEN_DESIGN_MEM_LIMIT=384m
 
@@ -120,7 +124,7 @@ OPEN_DESIGN_MEM_LIMIT=384m
 OPEN_DESIGN_ALLOWED_ORIGINS=https://yourdomain.com
 
 # Docker image tag
-OPEN_DESIGN_IMAGE=docker.io/vanjayak/open-design:latest
+OPEN_DESIGN_IMAGE=docker.io/townsendwu/open-design:latest
 ```
 
 ---

@@ -111,6 +111,7 @@ test('install.sh --help exits 0', async () => {
   assert.match(stdout, /Usage/);
   assert.match(stdout, /--non-interactive/);
   assert.match(stdout, /--port/);
+  assert.match(stdout, /--api-token/);
 });
 
 test('uninstall.sh --help exits 0', async () => {
@@ -145,6 +146,7 @@ test('install.sh --non-interactive creates .env and starts container', { skip: !
     // .env should contain the port
     const envContent = await readFile(join(ctx.tmpDir, '.env'), 'utf8');
     assert.match(envContent, new RegExp(`OPEN_DESIGN_PORT=${ctx.port}`));
+    assert.match(envContent, /OPEN_DESIGN_API_TOKEN=[a-f0-9]{64}/);
 
     // Container should be healthy
     const healthy = await waitForHealth(ctx.port, 60_000);

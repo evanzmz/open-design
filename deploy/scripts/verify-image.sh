@@ -30,6 +30,7 @@ for required_path in \
   "app/apps/web/out/index.html" \
   "app/apps/daemon/node_modules/express" \
   "app/apps/daemon/node_modules/better-sqlite3" \
+  "app/apps/daemon/node_modules/.pnpm/better-sqlite3@.*/node_modules/better-sqlite3/.*/better_sqlite3.node" \
   "app/skills" \
   "app/design-systems" \
   "app/assets/frames"
@@ -71,7 +72,7 @@ if [[ "$node_major" != "24" ]]; then
   exit 1
 fi
 
-CONTAINER_ID="$(docker run -d -p 127.0.0.1::7456 "$IMAGE_REF")"
+CONTAINER_ID="$(docker run -d -e OD_API_TOKEN=verify-image-token -p 127.0.0.1::7456 "$IMAGE_REF")"
 runtime_port="$(docker port "$CONTAINER_ID" 7456/tcp | awk -F: '{print $2}')"
 health_code=""
 

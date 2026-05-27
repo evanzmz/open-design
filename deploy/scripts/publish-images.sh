@@ -5,12 +5,13 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 REGISTRY="${REGISTRY:-docker.io}"
-IMAGE_NAMESPACE="${IMAGE_NAMESPACE:-vanjayak}"
+IMAGE_NAMESPACE="${IMAGE_NAMESPACE:-townsendwu}"
 IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-open-design}"
-NODE_BASE_IMAGE="${NODE_BASE_IMAGE:-docker.io/library/node:24-alpine}"
-RUNTIME_BASE_IMAGE="${RUNTIME_BASE_IMAGE:-docker.io/library/node:24-alpine}"
+NODE_BASE_IMAGE="${NODE_BASE_IMAGE:-docker.io/library/node:24-slim}"
+RUNTIME_BASE_IMAGE="${RUNTIME_BASE_IMAGE:-docker.io/library/node:24-slim}"
 PUSH_STRATEGY="${PUSH_STRATEGY:-skopeo}"
 PRELOAD_BASE_IMAGES="${PRELOAD_BASE_IMAGES:-1}"
+AUTO_PROXY="${AUTO_PROXY:-1}"
 DRY_RUN="${DRY_RUN:-0}"
 INSPECT_AFTER_PUSH="${INSPECT_AFTER_PUSH:-1}"
 SKOPEO_AUTHFILE="${SKOPEO_AUTHFILE:-$HOME/.docker/config.json}"
@@ -26,6 +27,8 @@ NO_PROXY="${NO_PROXY:-${no_proxy:-}}"
 BUILD_HTTP_PROXY=""
 BUILD_HTTPS_PROXY=""
 BUILD_NO_PROXY=""
+NPM_CONFIG_REGISTRY="${NPM_CONFIG_REGISTRY:-https://registry.npmjs.org}"
+COREPACK_NPM_REGISTRY="${COREPACK_NPM_REGISTRY:-$NPM_CONFIG_REGISTRY}"
 
 cleanup_temp_artifacts() {
   if [[ -n "$TEMP_SKOPEO_AUTHFILE" && -f "$TEMP_SKOPEO_AUTHFILE" ]]; then
@@ -104,13 +107,14 @@ Options:
   --arch <amd64|arm64>            publish a single platform as <tag>-<arch>
   --image_tag <tag>               default: latest
   --registry <registry>           default: docker.io
-  --image_namespace <namespace>   default: vanjayak
+  --image_namespace <namespace>   default: townsendwu
   --image_repository <name>       default: open-design
   --image <image-ref>             override full image ref
-  --node_base_image <image-ref>   default: docker.io/library/node:24-alpine
-  --runtime_base_image <image-ref> default: docker.io/library/node:24-alpine
-  --push_strategy <skopeo|buildx> default: skopeo
+  --node_base_image <image-ref>   default: docker.io/library/node:24-slim
+  --runtime_base_image <image-ref> default: docker.io/library/node:24-slim
+  --push_strategy <skopeo|buildx|docker> default: skopeo
   --preload_base_images <0|1>     default: 1
+  --auto_proxy <0|1>              default: 1
   --skopeo_authfile <path>        default: ~/.docker/config.json
   --inspect_after_push <0|1>      default: 1
   --dry_run
@@ -119,6 +123,7 @@ Options:
 Examples:
   deploy/scripts/publish-images.sh --arch arm64
   deploy/scripts/publish-images.sh --image_tag 0.1.0
+  deploy/scripts/publish-images.sh --arch arm64 --push_strategy docker
 EOF
 }
 
@@ -135,7 +140,22 @@ command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
+docker_buildx_available() {
+  docker buildx version >/dev/null 2>&1
+}
+
+ensure_buildx() {
+  if ! docker_buildx_available; then
+    die "'docker buildx' is not available. Install the Docker buildx plugin for multi-platform publishes, or publish the current architecture with '--arch arm64 --push_strategy docker' (use '--arch amd64' on x86_64 hosts)."
+  fi
+  docker buildx inspect --bootstrap >/dev/null
+}
+
 detect_proxy_if_available() {
+  if [[ "$AUTO_PROXY" != "1" ]]; then
+    return 0
+  fi
+
   if [[ -n "$HTTP_PROXY" || -n "$HTTPS_PROXY" ]]; then
     return 0
   fi
@@ -149,6 +169,23 @@ detect_proxy_if_available() {
     export no_proxy="$NO_PROXY" NO_PROXY
     log "using local proxy $HTTP_PROXY for registry and build network access"
   fi
+}
+
+clear_local_proxy_if_disabled() {
+  if [[ "$AUTO_PROXY" != "0" ]]; then
+    return 0
+  fi
+
+  case "$HTTP_PROXY" in
+    http://127.0.0.1:7890|http://localhost:7890)
+      HTTP_PROXY=""
+      ;;
+  esac
+  case "$HTTPS_PROXY" in
+    http://127.0.0.1:7890|http://localhost:7890)
+      HTTPS_PROXY=""
+      ;;
+  esac
 }
 
 normalize_proxy_for_build() {
@@ -272,14 +309,14 @@ node_local_base_image() {
   local platform="$1"
   local arch
   arch="$(platform_to_arch "$platform")" || die "unsupported platform '$platform'"
-  printf 'open-design-base-node:24-alpine-%s' "$arch"
+  printf 'open-design-base-node:24-slim-%s' "$arch"
 }
 
 runtime_local_base_image() {
   local platform="$1"
   local arch
   arch="$(platform_to_arch "$platform")" || die "unsupported platform '$platform'"
-  printf 'open-design-runtime-base:24-alpine-%s' "$arch"
+  printf 'open-design-runtime-base:24-slim-%s' "$arch"
 }
 
 node_image_for_platform() {
@@ -408,6 +445,8 @@ inspect_remote_image() {
 
   if [[ "$PUSH_STRATEGY" == "skopeo" ]]; then
     skopeo_inspect_raw "$image"
+  elif [[ "$PUSH_STRATEGY" == "docker" ]]; then
+    docker manifest inspect "$image" >/dev/null
   else
     docker buildx imagetools inspect "$image" >/dev/null
   fi
@@ -445,6 +484,13 @@ print_build_cmd() {
     return 0
   fi
 
+  if [[ "$PUSH_STRATEGY" == "docker" ]]; then
+    printf 'docker build --platform %s%s -t %s %s %s\n' \
+      "$platform" "$host_arg" "$image" "${args[*]}" "$ROOT_DIR"
+    printf 'docker push %s\n' "$image"
+    return 0
+  fi
+
   printf 'docker buildx build --platform %s%s -t %s %s --push %s\n' \
     "$platform" "$host_arg" "$image" "${args[*]}" "$ROOT_DIR"
 }
@@ -454,10 +500,10 @@ run_build() {
   local platform="$2"
   shift 2
   local args=("$@")
-  local host_args=()
+  local docker_platform_args=(--platform "$platform")
 
   if build_proxy_requires_host_gateway; then
-    host_args=(--add-host "host.docker.internal=host-gateway")
+    docker_platform_args+=(--add-host "host.docker.internal=host-gateway")
   fi
 
   if [[ "$DRY_RUN" == "1" ]]; then
@@ -467,17 +513,22 @@ run_build() {
 
   if [[ "$PUSH_STRATEGY" == "skopeo" ]]; then
     docker buildx build \
-      --platform "$platform" \
-      "${host_args[@]}" \
+      "${docker_platform_args[@]}" \
       -t "$image" \
       "${args[@]}" \
       --load \
       "$ROOT_DIR"
     push_local_image_with_skopeo "$image"
+  elif [[ "$PUSH_STRATEGY" == "docker" ]]; then
+    docker build \
+      "${docker_platform_args[@]}" \
+      -t "$image" \
+      "${args[@]}" \
+      "$ROOT_DIR"
+    docker push "$image"
   else
     docker buildx build \
-      --platform "$platform" \
-      "${host_args[@]}" \
+      "${docker_platform_args[@]}" \
       -t "$image" \
       "${args[@]}" \
       --push \
@@ -565,6 +616,10 @@ while [[ $# -gt 0 ]]; do
       PRELOAD_BASE_IMAGES="$2"
       shift 2
       ;;
+    --auto_proxy)
+      AUTO_PROXY="$2"
+      shift 2
+      ;;
     --skopeo_authfile)
       SKOPEO_AUTHFILE="$2"
       EFFECTIVE_SKOPEO_AUTHFILE="$SKOPEO_AUTHFILE"
@@ -593,14 +648,23 @@ if [[ -n "$SINGLE_ARCH" ]]; then
 fi
 
 case "$PUSH_STRATEGY" in
-  skopeo|buildx)
+  skopeo|buildx|docker)
     ;;
   *)
     die "unsupported push strategy: $PUSH_STRATEGY"
     ;;
 esac
 
+case "$AUTO_PROXY" in
+  0|1)
+    ;;
+  *)
+    die "unsupported auto proxy value: $AUTO_PROXY (use 0 or 1)"
+    ;;
+esac
+
 refresh_image_ref
+clear_local_proxy_if_disabled
 detect_proxy_if_available
 
 BUILD_HTTP_PROXY="$(normalize_proxy_for_build "$HTTP_PROXY")"
@@ -614,18 +678,28 @@ build_args=(
   --build-arg "https_proxy=${BUILD_HTTPS_PROXY}"
   --build-arg "no_proxy=${BUILD_NO_PROXY}"
   --build-arg "NO_PROXY=${BUILD_NO_PROXY}"
+  --build-arg "NPM_CONFIG_REGISTRY=${NPM_CONFIG_REGISTRY}"
+  --build-arg "COREPACK_NPM_REGISTRY=${COREPACK_NPM_REGISTRY}"
 )
-
-if [[ "$DRY_RUN" != "1" ]]; then
-  docker buildx inspect --bootstrap >/dev/null
-  if [[ "$PUSH_STRATEGY" == "skopeo" ]]; then
-    ensure_skopeo
-  fi
-fi
 
 IFS=',' read -r -a platform_list <<<"$PLATFORMS"
 platform_total="${#platform_list[@]}"
 image_sources=()
+
+if [[ "$PUSH_STRATEGY" == "docker" && "$platform_total" -gt 1 ]]; then
+  die "PUSH_STRATEGY=docker supports one platform only; pass --arch arm64 or --arch amd64, or install docker buildx for multi-platform publishes"
+fi
+
+if [[ "$DRY_RUN" != "1" ]]; then
+  if [[ "$PUSH_STRATEGY" == "skopeo" || "$PUSH_STRATEGY" == "buildx" ]]; then
+    ensure_buildx
+  else
+    docker version >/dev/null
+  fi
+  if [[ "$PUSH_STRATEGY" == "skopeo" ]]; then
+    ensure_skopeo
+  fi
+fi
 
 for platform in "${platform_list[@]}"; do
   ensure_base_images_preloaded "$platform"

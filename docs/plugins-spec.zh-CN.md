@@ -1613,7 +1613,7 @@ OD 以单个 multi-arch Docker image 发布，使完整 plugin/marketplace syste
   - 插件常假设存在的通用 runtime deps：`ffmpeg`、`git`、`ripgrep`。
 - **Excluded**：electron、native macOS/Windows toolchains、dev tooling。
 
-base image 是 `node:24-bookworm-slim`。container 内用户是 non-root（`uid 10001`）。
+base image 是 `node:24-slim`。container 内用户是 non-root（`uid 10001`）。
 
 ### 15.2 Persistence
 

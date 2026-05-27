@@ -1,5 +1,5 @@
-ARG NODE_IMAGE=docker.io/library/node:24-alpine
-ARG RUNTIME_IMAGE=docker.io/library/node:24-alpine
+ARG NODE_IMAGE=docker.io/library/node:24-slim
+ARG RUNTIME_IMAGE=docker.io/library/node:24-slim
 
 FROM ${NODE_IMAGE} AS build
 
@@ -9,6 +9,8 @@ ARG http_proxy
 ARG https_proxy
 ARG no_proxy
 ARG NO_PROXY
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org
+ARG COREPACK_NPM_REGISTRY=https://registry.npmjs.org
 
 ENV HTTP_PROXY=${HTTP_PROXY}
 ENV HTTPS_PROXY=${HTTPS_PROXY}
@@ -16,9 +18,17 @@ ENV http_proxy=${http_proxy}
 ENV https_proxy=${https_proxy}
 ENV no_proxy=${no_proxy}
 ENV NO_PROXY=${NO_PROXY}
+ENV npm_config_registry=${NPM_CONFIG_REGISTRY}
+ENV COREPACK_NPM_REGISTRY=${COREPACK_NPM_REGISTRY}
+ENV npm_config_fetch_retries=5
+ENV npm_config_fetch_retry_maxtimeout=120000
+ENV npm_config_fetch_timeout=300000
 ENV CI=true
 
-RUN apk add --no-cache python3 make g++
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends python3 make g++ ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -36,6 +46,7 @@ COPY apps ./apps
 RUN pnpm --filter @open-design/daemon build && \
     pnpm --filter @open-design/web build && \
     pnpm --filter @open-design/daemon deploy --legacy --prod /app/deploy/daemon && \
+    pnpm --dir /app/deploy/daemon rebuild better-sqlite3 && \
     pnpm store prune && \
     rm -rf \
       /root/.cache \
@@ -68,9 +79,12 @@ RUN pnpm --filter @open-design/daemon build && \
 
 FROM ${RUNTIME_IMAGE}
 
-RUN apk add --no-cache tini poppler-utils && \
-    addgroup -S -g 1001 open-design && \
-    adduser -S -D -H -u 1001 -G open-design open-design
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends tini poppler-utils ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    addgroup --system --gid 1001 open-design && \
+    adduser --system --uid 1001 --ingroup open-design --home /nonexistent --no-create-home open-design
 
 WORKDIR /app
 COPY --from=build --chown=open-design:open-design /app/deploy/daemon ./apps/daemon
@@ -99,5 +113,5 @@ ENV OD_PORT=7456
 EXPOSE 7456
 
 USER open-design
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "apps/daemon/dist/cli.js", "--no-open"]

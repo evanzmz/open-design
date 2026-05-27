@@ -341,6 +341,7 @@ docker compose version
 ```bash id="m9w43w"
 git clone https://github.com/nexu-io/open-design.git
 cd open-design/deploy
+printf "OPEN_DESIGN_API_TOKEN=%s\n" "$(openssl rand -hex 32)" > .env
 docker compose up -d
 ```
 

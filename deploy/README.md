@@ -1,6 +1,6 @@
 # Docker deployment
 
-This deployment ships Open Design as a single Alpine-based runtime image. The
+This deployment ships Open Design as a single Debian slim-based runtime image. The
 daemon serves both the API and the built Next.js static export, so there is no
 separate nginx container.
 
@@ -8,14 +8,17 @@ separate nginx container.
 
 ```bash
 cd deploy
-OPEN_DESIGN_IMAGE=docker.io/vanjayak/open-design:latest docker compose pull
-OPEN_DESIGN_IMAGE=docker.io/vanjayak/open-design:latest docker compose up -d --no-build
+printf "OPEN_DESIGN_API_TOKEN=%s\n" "$(openssl rand -hex 32)" > .env
+OPEN_DESIGN_IMAGE=docker.io/townsendwu/open-design:latest docker compose pull
+OPEN_DESIGN_IMAGE=docker.io/townsendwu/open-design:latest docker compose up -d --no-build
 ```
 
 Defaults:
 
 - Host port: `127.0.0.1:7456` (`OPEN_DESIGN_PORT=8080` to publish on `127.0.0.1:8080`)
-- Runtime data volume: `open_design_data` mounted at `/app/.od`
+- API token: required as `OPEN_DESIGN_API_TOKEN` because the container daemon binds `0.0.0.0`
+- Runtime base path: `/open-design` (`OPEN_DESIGN_BASE_PATH=/open-design`)
+- Runtime data volume: `open_design_data` mounted at `/by/.od`
 - Node heap cap: `--max-old-space-size=192`
 - Compose memory cap: `384m` (`OPEN_DESIGN_MEM_LIMIT=256m` to override)
 
@@ -35,7 +38,7 @@ OPEN_DESIGN_ALLOWED_ORIGINS=https://od.example.com,http://203.0.113.10:7456 dock
 Pin a specific published image with a digest instead of the mutable `latest` tag:
 
 ```bash
-OPEN_DESIGN_IMAGE=docker.io/vanjayak/open-design@sha256:<digest> docker compose up -d --no-build
+OPEN_DESIGN_IMAGE=docker.io/townsendwu/open-design@sha256:<digest> docker compose up -d --no-build
 ```
 The image intentionally does not bundle Claude/Codex/Gemini CLI binaries. Keep
 those outside the image, or build a separate private runtime layer if a server
@@ -52,11 +55,34 @@ Useful overrides:
 ```bash
 IMAGE_NAMESPACE=your-dockerhub-user deploy/scripts/publish-images.sh --arch arm64
 deploy/scripts/publish-images.sh --image docker.io/your-user/open-design:0.1.0
+deploy/scripts/publish-images.sh --image docker.io/your-user/open-design:latest --auto_proxy 0
+```
+
+## Publish to GHCR
+
+```bash
+docker login ghcr.io
+REGISTRY=ghcr.io IMAGE_NAMESPACE=<github-owner> IMAGE_REPOSITORY=open-design IMAGE_TAG=latest \
+  deploy/scripts/publish-images.sh
+```
+
+Or pass the full image reference:
+
+```bash
+deploy/scripts/publish-images.sh --image ghcr.io/<github-owner>/open-design:latest
+```
+
+If your Docker CLI does not include the `buildx` plugin, publish one native
+architecture with the legacy Docker builder:
+
+```bash
+deploy/scripts/publish-images.sh --image ghcr.io/<github-owner>/open-design:latest \
+  --arch arm64 --push_strategy docker
 ```
 
 The script defaults to:
 
-- `docker.io/vanjayak/open-design:<tag>`
+- `docker.io/townsendwu/open-design:<tag>`
 - `linux/amd64,linux/arm64`
 - `skopeo` push strategy with Docker credentials read from `~/.docker/config.json`
 - preloading base images through `skopeo` to reduce Docker Hub pull flakiness
