@@ -31,7 +31,7 @@ const HOST = process.env.OD_HOST || "127.0.0.1";
 if (process.env.OD_HOST != null && !/^[a-zA-Z0-9._\-:[\]@]+$/.test(process.env.OD_HOST)) {
   throw new Error(`OD_HOST contains invalid characters: ${process.env.OD_HOST}`);
 }
-const BASE_PATH = normalizeBasePath(process.env.OD_BASE_PATH ?? "/open-design");
+const BASE_PATH = normalizeBasePath(process.env.OD_BASE_PATH);
 const DAEMON_HOST = "127.0.0.1";
 const STANDALONE_BACKEND_HOST = "127.0.0.1";
 const DAEMON_PORT_ENV = SIDECAR_ENV.DAEMON_PORT;
@@ -204,14 +204,15 @@ function resolveDaemonOrigin(): string | null {
   return port === 0 ? null : `http://${DAEMON_HOST}:${port}`;
 }
 
-function normalizeBasePath(value: string): string {
+function normalizeBasePath(value: string | undefined): string {
   if (!value || value === "/") return "";
   const prefixed = value.startsWith("/") ? value : `/${value}`;
   return prefixed.replace(/\/+$/u, "");
 }
 
 function isDaemonProxyPathname(pathname: string): boolean {
-  if (BASE_PATH && (pathname === BASE_PATH || pathname.startsWith(`${BASE_PATH}/`))) {
+  if (BASE_PATH) {
+    if (!(pathname === BASE_PATH || pathname.startsWith(`${BASE_PATH}/`))) return false;
     const stripped = pathname.slice(BASE_PATH.length) || "/";
     return (
       stripped === "/api" ||

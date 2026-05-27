@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useI18n } from '../i18n';
-import { apiUrl } from '../utils/web-path';
+import { apiUrl, isSameOriginApiUrl } from '../utils/web-path';
 import {
   ANALYTICS_HEADER_DEVICE_ID,
   ANALYTICS_HEADER_CLIENT_TYPE,
@@ -65,26 +65,6 @@ interface AnalyticsContextValue {
 }
 
 const Ctx = createContext<AnalyticsContextValue | null>(null);
-
-// PR #1428 reviewer (Siri-Ray): the previous `url.includes('/api/')` check
-// matched absolute third-party URLs (https://provider.example/api/x), which
-// would leak our analytics headers outside the daemon boundary. This helper
-// is strictly same-origin + /api/ prefix and is shared by both the global
-// fetch wrapper and the per-track request_id wrapper.
-function isSameOriginApiCall(url: unknown): boolean {
-  if (typeof url !== 'string') return false;
-  if (url.startsWith('/api/')) return true;
-  if (typeof window === 'undefined') return false;
-  try {
-    const parsed = new URL(url, window.location.origin);
-    return (
-      parsed.origin === window.location.origin &&
-      parsed.pathname.startsWith('/api/')
-    );
-  } catch {
-    return false;
-  }
-}
 
 // App version is read from a runtime endpoint rather than at build time so
 // the same web bundle reports the daemon-pinned version even when running
@@ -187,7 +167,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     };
     window.fetch = async (input, init) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      if (!isSameOriginApiCall(url)) return original(input, init);
+      if (!isSameOriginApiUrl(url)) return original(input, init);
       const merged: HeadersInit = {
         ...baseHeaders,
         [ANALYTICS_HEADER_LOCALE]: locale,
@@ -241,7 +221,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
                 : input instanceof URL
                   ? input.href
                   : input.url;
-            if (!isSameOriginApiCall(url)) return baseFetch(input, init);
+            if (!isSameOriginApiUrl(url)) return baseFetch(input, init);
             const merged: HeadersInit = {
               [ANALYTICS_HEADER_REQUEST_ID]: requestId,
               ...(init?.headers ?? {}),

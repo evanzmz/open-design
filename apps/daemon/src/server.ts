@@ -381,6 +381,7 @@ import { registerConnectorRoutes } from './connectors/routes.js';
 import { registerActiveContextRoutes } from './active-context-routes.js';
 import { registerHostToolsRoutes } from './host-tools-routes.js';
 import { registerMcpRoutes } from './mcp-routes.js';
+import { getDaemonBasePath, withDaemonBasePath } from './base-path.js';
 import { registerXaiRoutes } from './xai-routes.js';
 import { registerLiveArtifactRoutes } from './live-artifact-routes.js';
 import { registerDesignSystemToolRoutes } from './design-system-tool-routes.js';
@@ -1111,50 +1112,9 @@ const PLUGIN_REGISTRY_DIR = resolveDaemonResourceDir(
 );
 const OFFICIAL_MARKETPLACE_ID = 'official';
 const OFFICIAL_PLUGIN_SOURCE_REPO = 'github:nexu-io/open-design@main';
-const DEFAULT_DAEMON_BASE_PATH = '/open-design';
-
-function normalizeDaemonBasePath(value) {
-  if (!value || value === '/') return '';
-  const prefixed = value.startsWith('/') ? value : `/${value}`;
-  return prefixed.replace(/\/+$/u, '');
-}
-
-function getDaemonBasePath() {
-  return normalizeDaemonBasePath(process.env.OD_BASE_PATH ?? DEFAULT_DAEMON_BASE_PATH);
-}
-
-function stripDaemonBasePath(pathname) {
-  const basePath = getDaemonBasePath();
-  if (!basePath || (pathname !== basePath && !pathname.startsWith(`${basePath}/`))) {
-    return pathname;
-  }
-  return pathname.slice(basePath.length) || '/';
-}
-
-function hasDaemonBasePath(pathname) {
-  const basePath = getDaemonBasePath();
-  return !!basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`));
-}
-
-function applyDaemonBasePath(req, _res, next) {
-  const originalUrl = req.url ?? '';
-  const pathname = originalUrl.split(/[?#]/, 1)[0] || '/';
-  req.odOriginalUrl = originalUrl;
-  req.odHadBasePath = hasDaemonBasePath(pathname);
-  if (!req.odHadBasePath) return next();
-
-  const rest = originalUrl.slice(getDaemonBasePath().length);
-  req.url = rest.length > 0 && rest.startsWith('/') ? rest : `/${rest}`;
-  return next();
-}
-
 export function isStaticSpaFallbackRequest(req) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return false;
-  const basePath = getDaemonBasePath();
-  const pathname = stripDaemonBasePath(req.path);
-  if (basePath && !(req.odHadBasePath === true || hasDaemonBasePath(req.odOriginalUrl ?? req.path))) {
-    return false;
-  }
+  const pathname = req.path;
   if (pathname === '/api' || pathname.startsWith('/api/')) return false;
   if (pathname === '/artifacts' || pathname.startsWith('/artifacts/')) return false;
   if (pathname === '/frames' || pathname.startsWith('/frames/')) return false;
@@ -3519,8 +3479,8 @@ export async function startServer({
     );
   }
 
-  const app = express();
-  app.use(applyDaemonBasePath);
+  const rootApp = express();
+  const app = express.Router();
   app.use(express.json({ limit: '4mb' }));
 
   // Plan §3.K1 — bearer-token middleware.
@@ -6889,7 +6849,9 @@ export async function startServer({
         ) {
           return match;
         }
-        const url = `/api/plugins/${encodeURIComponent(pluginId)}/asset/${normalized}${suffix}`;
+        const url = withDaemonBasePath(
+          `/api/plugins/${encodeURIComponent(pluginId)}/asset/${normalized}${suffix}`,
+        );
         return `${attr}${quote}${url}${closeQuote}`;
       },
     );
@@ -12475,6 +12437,7 @@ export async function startServer({
   });
 
   registerStaticSpaFallback(app, STATIC_DIR);
+  rootApp.use(getDaemonBasePath() || '/', app);
 
   // Wait for `listen` to bind so callers always see the resolved URL —
   // critical when port=0 (ephemeral port) and when the embedding sidecar
@@ -12499,7 +12462,7 @@ export async function startServer({
     };
     let server;
     try {
-      server = app.listen(port, host, () => {
+      server = rootApp.listen(port, host, () => {
         const address = server.address();
         // `address()` can in theory return `string | AddressInfo | null`. For
         // a TCP listener it's always `AddressInfo` with a `.port` — the guard

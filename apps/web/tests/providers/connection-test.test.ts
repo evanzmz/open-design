@@ -7,7 +7,7 @@ import { testAgent, testApiProvider } from '../../src/providers/connection-test'
 import type { ConnectionTestResponse } from '../../src/types';
 
 const realFetch = globalThis.fetch;
-const api = (path: string) => `/open-design${path}`;
+const api = (path: string) => path;
 
 beforeEach(() => {
   // Each test installs its own stub.

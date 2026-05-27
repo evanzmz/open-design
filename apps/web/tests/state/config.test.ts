@@ -18,7 +18,7 @@ import type { AppConfig } from '../../src/types';
 
 const store = new Map<string, string>();
 const originalFetch = globalThis.fetch;
-const api = (path: string) => `/open-design${path}`;
+const api = (path: string) => path;
 
 vi.stubGlobal('localStorage', {
   getItem: vi.fn((key: string) => store.get(key) ?? null),

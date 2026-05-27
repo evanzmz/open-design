@@ -14,6 +14,7 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useT } from '../i18n';
 import { copyToClipboard } from '../lib/copy-to-clipboard';
+import { daemonResourceUrl } from '../utils/web-path';
 import type { MouseEvent } from 'react';
 
 export type MarkdownLinkClickHandler = (
@@ -475,11 +476,12 @@ function renderInline(text: string, options?: RenderMarkdownOptions): ReactNode 
       const src = m[3];
       const alt = m[2] || '';
       if (isSafeMarkdownImageSrc(src)) {
+        const normalizedSrc = daemonResourceUrl(src);
         out.push(
           <img
             key={key++}
             className="md-image"
-            src={src}
+            src={normalizedSrc}
             alt={alt}
             loading="lazy"
             referrerPolicy="no-referrer"
@@ -492,7 +494,7 @@ function renderInline(text: string, options?: RenderMarkdownOptions): ReactNode 
         pushText(out, alt, key++, options);
       }
     } else if (m[4] && m[5]) {
-      const href = m[5];
+      const href = daemonResourceUrl(m[5]);
       out.push(
         <a
           key={key++}
@@ -509,14 +511,15 @@ function renderInline(text: string, options?: RenderMarkdownOptions): ReactNode 
       // Bare URL — autolink with the URL as both href and visible text,
       // matching the Markdown `<https://…>` autolink convention.
       const [href, suffix] = splitTrailingAutolinkPunctuation(m[6]);
+      const normalizedHref = daemonResourceUrl(href);
       out.push(
         <a
           key={key++}
           className="md-link md-link-bare"
-          href={href}
+          href={normalizedHref}
           target="_blank"
           rel="noreferrer noopener"
-          onClick={linkClickHandler?.(href)}
+          onClick={linkClickHandler?.(normalizedHref)}
         >
           {href}
         </a>,

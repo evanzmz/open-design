@@ -9,8 +9,6 @@ type TestRequest = {
   get(name: string): string | undefined;
   method: string;
   path: string;
-  odHadBasePath?: boolean;
-  odOriginalUrl?: string;
 };
 
 describe('static SPA fallback', () => {
@@ -71,7 +69,7 @@ describe('static SPA fallback', () => {
   });
 });
 
-describe('static SPA fallback with OD_BASE_PATH', () => {
+describe('static SPA fallback behind a mounted basePath', () => {
   let tempDir: string;
   let previousBasePath: string | undefined;
 
@@ -92,30 +90,24 @@ describe('static SPA fallback with OD_BASE_PATH', () => {
   });
 
   function request(pathname: string, accept = 'text/html', method = 'GET'): TestRequest {
-    const normalizedPath = pathname.startsWith('/open-design/')
-      ? pathname.slice('/open-design'.length)
-      : pathname;
     return {
       get(name: string) {
         return name.toLowerCase() === 'accept' ? accept : undefined;
       },
       method,
-      path: normalizedPath,
-      odHadBasePath: pathname === '/open-design' || pathname.startsWith('/open-design/'),
-      odOriginalUrl: pathname,
+      path: pathname,
     };
   }
 
-  it('serves the SPA shell only under the configured basePath', async () => {
-    expect(resolveStaticSpaFallbackPath(request('/open-design/projects/proj-1'), tempDir))
+  it('serves the SPA shell for router-stripped app routes', async () => {
+    expect(resolveStaticSpaFallbackPath(request('/projects/proj-1'), tempDir))
       .toBe(path.join(tempDir, 'index.html'));
-    expect(resolveStaticSpaFallbackPath(request('/projects/proj-1'), tempDir)).toBeNull();
   });
 
-  it('leaves prefixed API and static misses to downstream 404 handling', async () => {
-    expect(resolveStaticSpaFallbackPath(request('/open-design/api/routines/nope'), tempDir)).toBeNull();
-    expect(resolveStaticSpaFallbackPath(request('/open-design/artifacts/missing'), tempDir)).toBeNull();
-    expect(resolveStaticSpaFallbackPath(request('/open-design/frames/missing'), tempDir)).toBeNull();
-    expect(resolveStaticSpaFallbackPath(request('/open-design/_next/static/missing.js'), tempDir)).toBeNull();
+  it('leaves router-stripped API and static misses to downstream 404 handling', async () => {
+    expect(resolveStaticSpaFallbackPath(request('/api/routines/nope'), tempDir)).toBeNull();
+    expect(resolveStaticSpaFallbackPath(request('/artifacts/missing'), tempDir)).toBeNull();
+    expect(resolveStaticSpaFallbackPath(request('/frames/missing'), tempDir)).toBeNull();
+    expect(resolveStaticSpaFallbackPath(request('/_next/static/missing.js'), tempDir)).toBeNull();
   });
 });

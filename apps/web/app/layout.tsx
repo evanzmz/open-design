@@ -5,11 +5,20 @@ import { AnalyticsProvider } from '../src/analytics/provider';
 import '../src/index.css';
 import '../src/styles/home/index.css';
 
+function normalizeBasePath(value: string | undefined): string {
+  if (!value || value === '/') return '';
+  const prefixed = value.startsWith('/') ? value : `/${value}`;
+  return prefixed.replace(/\/+$/u, '');
+}
+
+const basePath = normalizeBasePath(process.env.OD_BASE_PATH);
+const appIconPath = `${basePath}/app-icon.png`;
+
 export const metadata: Metadata = {
   title: 'Open Design',
   icons: {
-    icon: '/app-icon.png',
-    apple: '/app-icon.png',
+    icon: appIconPath,
+    apple: appIconPath,
   },
 };
 

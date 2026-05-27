@@ -21,7 +21,12 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  (window as any).__NEXT_DATA__ = { basePath: '/open-design' };
   window.localStorage.clear();
+});
+
+afterEach(() => {
+  delete (window as any).__NEXT_DATA__;
 });
 
 function Probe({ sink }: { sink: { enabled?: boolean } }) {

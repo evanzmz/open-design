@@ -6,6 +6,7 @@ import { MCP_TEMPLATES, buildAcpMcpServers, buildClaudeMcpJson, isManagedProject
 import { beginAuth, exchangeCodeForToken, refreshAccessToken } from './mcp-oauth.js';
 import { clearToken, getToken, isTokenExpired, readAllTokens, setToken } from './mcp-tokens.js';
 import type { RouteDeps } from './server-context.js';
+import { withDaemonBasePath } from './base-path.js';
 
 export interface RegisterMcpRoutesDeps extends RouteDeps<'http' | 'paths' | 'mcp'> {}
 
@@ -293,11 +294,7 @@ function getPublicBaseUrl(req: any) {
 }
 
 function mcpOAuthCallbackUrl(req: any) {
-  const basePath = process.env.OD_BASE_PATH ?? '/open-design';
-  const bp = basePath && basePath !== '/'
-    ? `${basePath.startsWith('/') ? '' : '/'}${basePath}`.replace(/\/+$/u, '')
-    : '';
-  return `${getPublicBaseUrl(req)}${bp}/api/mcp/oauth/callback`;
+  return `${getPublicBaseUrl(req)}${withDaemonBasePath('/api/mcp/oauth/callback')}`;
 }
 
 function renderOAuthResultPage(opts: any) {

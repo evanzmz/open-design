@@ -202,6 +202,25 @@ describe('GET /api/plugins/:id/example/:name', () => {
     );
   });
 
+  it('includes the daemon basePath when rewriting preview asset URLs', async () => {
+    const previousBasePath = process.env.OD_BASE_PATH;
+    process.env.OD_BASE_PATH = '/od';
+    try {
+      const resp = await fetch(`${baseUrl}/api/plugins/${PLUGIN_ID}/example/wrapped`);
+      expect(resp.status).toBe(200);
+      const body = await resp.text();
+      expect(body).toContain(
+        `/od/api/plugins/${encodeURIComponent(PLUGIN_ID)}/asset/examples/wrapped/hero.png`,
+      );
+    } finally {
+      if (previousBasePath == null) {
+        delete process.env.OD_BASE_PATH;
+      } else {
+        process.env.OD_BASE_PATH = previousBasePath;
+      }
+    }
+  });
+
   it('inlines the official Open Design GitHub metric so preview CSP can keep connect-src locked down', async () => {
     const dbPath = path.join(serverRuntimeDataRoot, 'app.sqlite');
     const db = new Database(dbPath);

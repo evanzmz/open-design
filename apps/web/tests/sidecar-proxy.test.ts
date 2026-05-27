@@ -23,10 +23,10 @@ describe('resolveDaemonProxyTarget', () => {
     expect(target?.href).toBe('http://127.0.0.1:7456/api/projects?limit=10');
   });
 
-  it('keeps the web basePath when proxying to the daemon origin', () => {
+  it('does not proxy prefixed paths unless OD_BASE_PATH configures that prefix', () => {
     const target = resolveDaemonProxyTarget('http://127.0.0.1:7456', '/open-design/api/projects?limit=10');
 
-    expect(target?.href).toBe('http://127.0.0.1:7456/open-design/api/projects?limit=10');
+    expect(target).toBeNull();
   });
 
   it('does not strip basePath-like prefixes', () => {
@@ -76,12 +76,10 @@ describe('createDaemonProxyHandler favicon handling', () => {
   }
 
   it('redirects browser favicon probes to the basePath-aware app icon', async () => {
-    for (const path of ['/favicon.ico', '/open-design/favicon.ico']) {
-      const response = await callHandler(path);
-      expect(response.statusCode).toBe(308);
-      expect(response.headers.get('location')).toBe('/open-design/app-icon.png');
-      expect(response.ended).toBe(true);
-    }
+    const response = await callHandler('/favicon.ico');
+    expect(response.statusCode).toBe(308);
+    expect(response.headers.get('location')).toBe('/app-icon.png');
+    expect(response.ended).toBe(true);
   });
 });
 

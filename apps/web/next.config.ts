@@ -11,6 +11,15 @@ import { fileURLToPath } from 'node:url';
 const DAEMON_PORT = Number(process.env.OD_PORT) || 7456;
 const DAEMON_ORIGIN = `http://127.0.0.1:${DAEMON_PORT}`;
 
+function normalizeBasePath(value: string | undefined): string {
+  if (!value || value === '/') return '';
+  const prefixed = value.startsWith('/') ? value : `/${value}`;
+  return prefixed.replace(/\/+$/u, '');
+}
+
+const BASE_PATH = normalizeBasePath(process.env.OD_BASE_PATH);
+const withBasePath = (pathname: string) => `${BASE_PATH}${pathname}`;
+
 // The regular CLI build still ships as a static export so the `od` daemon can
 // serve a single-process production build. Packaged desktop builds opt into a
 // server runtime with OD_WEB_OUTPUT_MODE=server; in that mode the web sidecar
@@ -155,7 +164,10 @@ function configuredAllowedDevHosts(): string[] {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: configuredAllowedDevHosts(),
-  basePath: '/open-design',
+  ...(BASE_PATH ? { basePath: BASE_PATH } : {}),
+  env: {
+    NEXT_PUBLIC_OD_BASE_PATH: BASE_PATH,
+  },
   outputFileTracingRoot: WORKSPACE_ROOT,
   reactStrictMode: true,
   // Emit browser sourcemaps so packaged-runtime exceptions can be symbolicated
@@ -185,16 +197,20 @@ const nextConfig: NextConfig = {
       }
       : !isProd
       ? {
-        async redirects() {
-          return [
-            {
-              source: '/',
-              destination: '/open-design',
-              basePath: false,
-              permanent: false,
-            },
-          ];
-        },
+        ...(BASE_PATH
+          ? {
+              async redirects() {
+                return [
+                  {
+                    source: '/',
+                    destination: BASE_PATH,
+                    basePath: false,
+                    permanent: false,
+                  },
+                ];
+              },
+            }
+          : {}),
         async rewrites() {
           // In dev we run the daemon on a sibling port; proxy the app API
           // proxy so the SPA can hit /api, /artifacts, and /frames without
@@ -203,15 +219,15 @@ const nextConfig: NextConfig = {
           return [
             {
               source: '/api/:path*',
-              destination: `${DAEMON_ORIGIN}/open-design/api/:path*`,
+              destination: `${DAEMON_ORIGIN}${withBasePath('/api/:path*')}`,
             },
             {
               source: '/artifacts/:path*',
-              destination: `${DAEMON_ORIGIN}/open-design/artifacts/:path*`,
+              destination: `${DAEMON_ORIGIN}${withBasePath('/artifacts/:path*')}`,
             },
             {
               source: '/frames/:path*',
-              destination: `${DAEMON_ORIGIN}/open-design/frames/:path*`,
+              destination: `${DAEMON_ORIGIN}${withBasePath('/frames/:path*')}`,
             },
           ];
         },

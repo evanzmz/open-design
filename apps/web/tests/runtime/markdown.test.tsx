@@ -14,6 +14,7 @@ describe('renderMarkdown', () => {
   let originalClipboard: PropertyDescriptor | undefined;
 
   beforeEach(() => {
+    (window as any).__NEXT_DATA__ = { basePath: '/open-design' };
     originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
@@ -32,6 +33,7 @@ describe('renderMarkdown', () => {
     }
     cleanup();
     vi.clearAllMocks();
+    delete (window as any).__NEXT_DATA__;
   });
 
   it('autolinks bare https URLs without breaking on underscores in query params', () => {
@@ -60,6 +62,13 @@ describe('renderMarkdown', () => {
     expect(out).toContain('<a class="md-link"');
     expect(out).toContain('href="https://example.com/page"');
     expect(out).toContain('>here</a>');
+  });
+
+  it('prepends basePath to root-relative daemon resources in markdown links and images', () => {
+    const out = html('![preview](/api/byok-image/1.png) [artifact](/artifacts/p1/index.html) [frame](/frames/demo)');
+    expect(out).toContain('src="/open-design/api/byok-image/1.png"');
+    expect(out).toContain('href="/open-design/artifacts/p1/index.html"');
+    expect(out).toContain('href="/open-design/frames/demo"');
   });
 
   it('marks bare URLs with the bare-link class so CSS can break them mid-string', () => {
@@ -239,7 +248,7 @@ describe('renderMarkdown', () => {
     const out = html('Here is your cat: ![cute kitten](/api/byok-image/abc-123.png)');
     expect(out).toContain('<img');
     expect(out).toContain('class="md-image"');
-    expect(out).toContain('src="/api/byok-image/abc-123.png"');
+    expect(out).toContain('src="/open-design/api/byok-image/abc-123.png"');
     expect(out).toContain('alt="cute kitten"');
     expect(out).toContain('loading="lazy"');
     expect(out).toContain('referrerPolicy="no-referrer"');
@@ -287,7 +296,7 @@ describe('renderMarkdown', () => {
     expect(out).toContain('href="https://example.com"');
     expect(out).toContain('>here</a>');
     expect(out).toContain('<img');
-    expect(out).toContain('src="/api/byok-image/a.png"');
+    expect(out).toContain('src="/open-design/api/byok-image/a.png"');
   });
 
   it('preserves bold + italic + code after the image regex addition', () => {

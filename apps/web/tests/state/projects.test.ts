@@ -9,7 +9,7 @@ import {
   publishGeneratedPluginToGitHub,
 } from '../../src/state/projects';
 
-const api = (path: string) => `/open-design${path}`;
+const api = (path: string) => path;
 
 describe('applyPlugin', () => {
   afterEach(() => {

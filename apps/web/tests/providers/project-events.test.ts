@@ -59,6 +59,18 @@ describe('projectEventsUrl', () => {
 });
 
 describe('createProjectEventsConnection', () => {
+  beforeEach(() => {
+    vi.stubGlobal('window', {
+      __NEXT_DATA__: {
+        basePath: '/open-design',
+      },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('opens an EventSource against the events URL on creation', () => {
     const conn = createProjectEventsConnection(
       'p1',

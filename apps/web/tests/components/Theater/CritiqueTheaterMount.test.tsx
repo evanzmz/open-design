@@ -1,12 +1,19 @@
 // @vitest-environment jsdom
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CritiqueTheaterMount } from '../../../src/components/Theater/CritiqueTheaterMount';
 import type { CritiqueAction } from '../../../src/components/Theater/state/reducer';
 
-afterEach(() => cleanup());
+beforeEach(() => {
+  (window as any).__NEXT_DATA__ = { basePath: '/open-design' };
+});
+
+afterEach(() => {
+  cleanup();
+  delete (window as any).__NEXT_DATA__;
+});
 
 interface FactoryHandle {
   send: (action: CritiqueAction) => void;

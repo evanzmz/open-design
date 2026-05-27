@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import type { InstalledPluginRecord } from '@open-design/contracts';
 import { inferPluginPreview } from '../../src/components/plugins-home/preview';
 
-const api = (path: string) => `/open-design${path}`;
+const api = (path: string) => path;
 
 interface MakeArgs {
   id: string;

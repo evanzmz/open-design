@@ -14,6 +14,7 @@ import {
   fetchConnectorDiscovery,
   fetchPluginExampleHtml,
   fetchPluginPreviewHtml,
+  codexPetSpritesheetUrl,
   fetchProjectDesignSystemPackageAudit,
   fetchProjectFileText,
   fetchSkillExample,
@@ -23,7 +24,30 @@ import {
   writeProjectTextFileDetailed,
 } from '../../src/providers/registry';
 
-const api = (path: string) => `/open-design${path}`;
+const api = (path: string) => path;
+
+describe('codexPetSpritesheetUrl', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('applies the web basePath to daemon-stamped root-relative spritesheet URLs', () => {
+    vi.stubGlobal('window', {
+      __NEXT_DATA__: {
+        basePath: '/open-design',
+      },
+    });
+
+    expect(codexPetSpritesheetUrl({
+      id: 'spark',
+      displayName: 'Spark',
+      description: 'A bright little pet.',
+      spritesheetUrl: '/api/codex-pets/spark.png',
+      spritesheetExt: 'png',
+      hatchedAt: 1,
+    })).toBe('/open-design/api/codex-pets/spark.png');
+  });
+});
 
 describe('fetchAppVersionInfo', () => {
   afterEach(() => {

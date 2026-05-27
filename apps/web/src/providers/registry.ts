@@ -13,7 +13,7 @@ import type {
   ImportLocalDesignSystemResponse,
   ReplaceProjectWorkingDirResponse,
 } from '@open-design/contracts';
-import { apiUrl } from '../utils/web-path';
+import { apiUrl, daemonResourceUrl } from '../utils/web-path';
 import type {
   AgentInfo,
   AppVersionInfo,
@@ -197,8 +197,8 @@ export async function syncCommunityPets(
 export function codexPetSpritesheetUrl(pet: CodexPetSummary): string {
   // The daemon stamps an absolute path-prefix in `spritesheetUrl`; if
   // that prefix is empty (default), it is already a same-origin path
-  // we can hand to <img src> or fetch() as-is.
-  return pet.spritesheetUrl;
+  // we can hand to <img src> or fetch() after applying the web basePath.
+  return daemonResourceUrl(pet.spritesheetUrl);
 }
 
 // Body for POST /api/skills/import. Mirrors the contracts type but is

@@ -5,8 +5,10 @@ import { startServer } from '../src/server.js';
 describe('/api/version', () => {
   let server: http.Server;
   let baseUrl: string;
+  const previousBasePath = process.env.OD_BASE_PATH;
 
   beforeAll(async () => {
+    delete process.env.OD_BASE_PATH;
     const started = await startServer({ port: 0, returnServer: true }) as {
       url: string;
       server: http.Server;
@@ -17,10 +19,22 @@ describe('/api/version', () => {
 
   afterAll(() => new Promise<void>((resolve) => {
     if (server == null) {
+      if (previousBasePath == null) {
+        delete process.env.OD_BASE_PATH;
+      } else {
+        process.env.OD_BASE_PATH = previousBasePath;
+      }
       resolve();
       return;
     }
-    server.close(() => resolve());
+    server.close(() => {
+      if (previousBasePath == null) {
+        delete process.env.OD_BASE_PATH;
+      } else {
+        process.env.OD_BASE_PATH = previousBasePath;
+      }
+      resolve();
+    });
   }));
 
   it('returns current app version info', async () => {
@@ -50,6 +64,14 @@ describe('/api/version', () => {
     expect(healthRes.ok).toBe(true);
     expect(versionRes.ok).toBe(true);
     expect(health).toEqual({ ok: true, version: version.version?.version });
+  });
+
+  it('does not accept the deployment basePath unless OD_BASE_PATH is set', async () => {
+    const res = await fetch(`${baseUrl}/open-design/api/health`, {
+      headers: { accept: 'application/json' },
+    });
+
+    expect(res.status).toBe(404);
   });
 });
 
@@ -94,5 +116,13 @@ describe('/api/version with OD_BASE_PATH', () => {
 
     expect(res.ok).toBe(true);
     expect(json).toEqual({ ok: true, version: expect.any(String) });
+  });
+
+  it('does not accept unprefixed API requests when OD_BASE_PATH is set', async () => {
+    const res = await fetch(`${baseUrl}/api/health`, {
+      headers: { accept: 'application/json' },
+    });
+
+    expect(res.status).toBe(404);
   });
 });
