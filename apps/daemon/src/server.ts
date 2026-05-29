@@ -3467,14 +3467,20 @@ export async function startServer({
   //
   // Loopback hosts (127.0.0.1 / ::1 / localhost) are always allowed —
   // the desktop / dev flow remains unchanged. Setting OD_API_TOKEN is
-  // purely additive: when present, every /api/* request must carry a
-  // matching `Authorization: Bearer <token>` header (loopback origins
-  // are exempted so the desktop UI keeps working).
+  // purely additive: when present, non-local /api/* requests must carry
+  // a matching `Authorization: Bearer <token>` header. Loopback peers
+  // and same-origin browser requests are exempted so the local UI keeps
+  // working in desktop, dev, and Docker loopback-published deployments.
+  // Embedded deployments such as ByClaw may already isolate the daemon
+  // behind their own authenticated sandbox ingress. This escape hatch
+  // keeps the upstream-safe default while allowing that controlled shape.
+  const allowPublicBindWithoutToken = process.env.OD_ALLOW_PUBLIC_BIND_WITHOUT_TOKEN === '1';
   const apiToken = (process.env.OD_API_TOKEN ?? '').trim();
-  if (!isLoopbackHostname(host) && apiToken.length === 0) {
+  if (!isLoopbackHostname(host) && apiToken.length === 0 && !allowPublicBindWithoutToken) {
     throw new Error(
       `OD_BIND_HOST=${host} requires OD_API_TOKEN to be set. ` +
-      `Generate one with \`openssl rand -hex 32\` and re-launch. ` +
+      `Generate one with \`openssl rand -hex 32\`, or set ` +
+      `OD_ALLOW_PUBLIC_BIND_WITHOUT_TOKEN=1 for an externally protected embedded deployment. ` +
       `(Loopback hosts 127.0.0.1 / ::1 / localhost do not need a token.)`,
     );
   }
@@ -3485,11 +3491,11 @@ export async function startServer({
 
   // Plan §3.K1 — bearer-token middleware.
   //
-  // Active only when OD_API_TOKEN is set. Loopback origins skip the
-  // check (the desktop UI / local CLI never carry a bearer); every
-  // other request must present `Authorization: Bearer <token>` with a
-  // value matching `OD_API_TOKEN`. Health / version / status remain
-  // open so monitoring probes don't need the token.
+  // Active only when OD_API_TOKEN is set. Loopback peers and same-origin
+  // browser requests skip the bearer check; every other request must
+  // present `Authorization: Bearer <token>` with a value matching
+  // `OD_API_TOKEN`. Health / version / status remain open so monitoring
+  // probes don't need the token.
   if (apiToken.length > 0) {
     const openProbePaths = new Set(['/health', '/version', '/daemon/status']);
     app.use('/api', (req, res, next) => {
@@ -3499,6 +3505,7 @@ export async function startServer({
       // bearer; the loopback bypass exists for the localhost desktop
       // UI which has no proxy in the path.
       if (isLoopbackPeerAddress(req.socket?.remoteAddress)) return next();
+      if (isLocalSameOrigin(req, resolvedPort)) return next();
       const auth = req.get('authorization') ?? '';
       const match = /^Bearer\s+(\S+)\s*$/i.exec(auth);
       if (!match || match[1] !== apiToken) {

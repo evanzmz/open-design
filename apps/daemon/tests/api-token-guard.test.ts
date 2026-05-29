@@ -18,6 +18,7 @@ import { startServer } from '../src/server.js';
 
 const PREVIOUS_TOKEN = process.env.OD_API_TOKEN;
 const PREVIOUS_HOST  = process.env.OD_BIND_HOST;
+const PREVIOUS_ALLOW_PUBLIC_BIND = process.env.OD_ALLOW_PUBLIC_BIND_WITHOUT_TOKEN;
 
 let server: http.Server | undefined;
 let baseUrl = '';
@@ -32,13 +33,30 @@ afterEach(async () => {
   else process.env.OD_API_TOKEN = PREVIOUS_TOKEN;
   if (PREVIOUS_HOST === undefined) delete process.env.OD_BIND_HOST;
   else process.env.OD_BIND_HOST = PREVIOUS_HOST;
+  if (PREVIOUS_ALLOW_PUBLIC_BIND === undefined) delete process.env.OD_ALLOW_PUBLIC_BIND_WITHOUT_TOKEN;
+  else process.env.OD_ALLOW_PUBLIC_BIND_WITHOUT_TOKEN = PREVIOUS_ALLOW_PUBLIC_BIND;
 });
 
 describe('bound-API-token guard', () => {
   it('refuses to start with OD_BIND_HOST=0.0.0.0 when OD_API_TOKEN is unset', async () => {
     delete process.env.OD_API_TOKEN;
+    delete process.env.OD_ALLOW_PUBLIC_BIND_WITHOUT_TOKEN;
     await expect(startServer({ port: 0, host: '0.0.0.0', returnServer: true }))
       .rejects.toThrow(/OD_API_TOKEN/);
+  });
+
+  it('allows a public host without OD_API_TOKEN when the embedded-deployment bypass is enabled', async () => {
+    delete process.env.OD_API_TOKEN;
+    process.env.OD_ALLOW_PUBLIC_BIND_WITHOUT_TOKEN = '1';
+    const started = (await startServer({ port: 0, host: '0.0.0.0', returnServer: true })) as {
+      url: string;
+      server: http.Server;
+      shutdown?: () => Promise<void> | void;
+    };
+    server = started.server;
+    shutdown = started.shutdown;
+    baseUrl = started.url;
+    expect(baseUrl).toMatch(/^http:\/\/0\.0\.0\.0:/);
   });
 
   it('starts on a public host when OD_API_TOKEN is set', async () => {
